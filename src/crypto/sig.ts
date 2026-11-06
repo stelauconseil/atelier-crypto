@@ -15,6 +15,8 @@ export interface SigAlgo<K = any> {
   pipelineSign: string[];
   pipelineVerify: string[];
   variants?: { id: string; label: string }[];
+  /** Identifiant JOSE (RFC 7518, RFC 8037, projets IETF pour le post-quantique). */
+  jose?: (keys: K) => { alg: string; note: string };
   keygen(variant?: string): Promise<KeyPairViews<K>>;
   sign(keys: K, msg: Bytes): Promise<{ sig: Seg[]; inside: View[] }>;
   verify(keys: K, msg: Bytes, sig: Bytes): Promise<{ ok: boolean; inside: View[] }>;
@@ -55,6 +57,7 @@ const openSig = (K: RsaSigKeys, sig: Bytes) => i2osp(modPow(os2ip(sig), K.e, K.n
 export const DIGESTINFO_SHA256 = fromHex('3031300d060960864801650304020105000420');
 
 export const RSA_PKCS1_SIG: SigAlgo<RsaSigKeys> = {
+  jose: () => ({ alg: 'RS256', note: 'RFC 7518 : RSASSA-PKCS1-v1_5 avec SHA-256' }),
   pipelineSign: ['H = SHA-256(M)', 'EM = 00 01 FF…FF 00 ‖ DigestInfo ‖ H', 'σ = EMᵈ mod n'],
   pipelineVerify: ['EM′ = σᵉ mod n', 'Réencoder l\'EM attendu', 'Comparer octet à octet'],
   keygen: () => rsaSigKeygen('RSASSA-PKCS1-v1_5'),
@@ -84,6 +87,7 @@ export const RSA_PKCS1_SIG: SigAlgo<RsaSigKeys> = {
 };
 
 export const RSA_PSS: SigAlgo<RsaSigKeys> = {
+  jose: () => ({ alg: 'PS256', note: 'RFC 7518 : RSASSA-PSS, SHA-256, MGF1-SHA-256, sel de 32 octets' }),
   pipelineSign: ['mHash = SHA-256(M)', 'sel aléatoire', 'H = SHA-256(0⁸ ‖ mHash ‖ sel)', 'EM = (PS ‖ 01 ‖ sel) ⊕ MGF1(H) ‖ H ‖ BC', 'σ = EMᵈ mod n'],
   pipelineVerify: ['EM = σᵉ mod n', 'Démasquer DB, extraire le sel', 'Recalculer H', 'Comparer'],
   keygen: () => rsaSigKeygen('RSA-PSS'),
@@ -133,6 +137,7 @@ export function derFromRaw(raw: Bytes): Bytes {
 }
 
 export const ECDSA: SigAlgo<EcKeys> = {
+  jose: () => ({ alg: 'ES256', note: 'RFC 7518 : ECDSA P-256 + SHA-256, signature au format brut r ‖ s (64 octets), pas en DER' }),
   pipelineSign: ['h = SHA-256(M)', 'k aléatoire secret', 'r = x(k·G) mod q', 's = k⁻¹(h + d·r) mod q', 'σ = r ‖ s'],
   pipelineVerify: ['u₁ = h·s⁻¹, u₂ = r·s⁻¹', 'R = u₁·G + u₂·Q', 'x(R) mod q = r ?'],
   async keygen() {
@@ -196,6 +201,7 @@ interface EdKeys {
 }
 
 export const ED25519: SigAlgo<EdKeys> = {
+  jose: () => ({ alg: 'EdDSA', note: 'RFC 8037 (avec une JWK « OKP », crv Ed25519) ; la RFC 9864 ajoute l\'identifiant explicite « Ed25519 »' }),
   pipelineSign: ['(a, préfixe) = SHA-512(seed)', 'r = H(préfixe ‖ M)', 'R = r·B', 'S = r + H(R ‖ A ‖ M)·a', 'σ = R ‖ S'],
   pipelineVerify: ['S·B = R + H(R ‖ A ‖ M)·A ?'],
   async keygen() {
@@ -232,6 +238,7 @@ interface PqKeys {
 }
 
 export const MLDSA: SigAlgo<PqKeys> = {
+  jose: () => ({ alg: 'ML-DSA-65', note: 'identifiant du projet IETF draft-ietf-cose-dilithium (non encore une RFC)' }),
   pipelineSign: ['μ = H(tr ‖ M)', 'y aléatoire (masque)', 'w = A·y, w₁ = bits hauts', 'c̃ = H(μ ‖ w₁)', 'z = y + c·s₁', 'Rejet si z fuit ? recommencer', 'σ = c̃ ‖ z ‖ h'],
   pipelineVerify: ['w₁′ = UseHint(h, A·z − c·t₁·2ᵈ)', 'c̃ = H(μ ‖ w₁′) ?', '‖z‖∞ borné ?'],
   async keygen() {
@@ -263,6 +270,7 @@ const SLH = {
 } as const;
 
 export const SLHDSA: SigAlgo<PqKeys> = {
+  jose: (K) => ({ alg: `SLH-DSA-SHA2-${K.variant ?? '128f'}`, note: 'identifiant du projet IETF draft-ietf-cose-sphincs-plus (non encore une RFC)' }),
   variants: [
     { id: '128f', label: 'SLH-DSA-SHA2-128f (rapide, 17 Ko)' },
     { id: '128s', label: 'SLH-DSA-SHA2-128s (compacte, 7,8 Ko, lente)' },

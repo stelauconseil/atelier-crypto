@@ -256,3 +256,8 @@ label.f.fit { flex: 0 0 auto; min-width: 0; }
 .bv .cap, .status, .tip, .legend .lg, .bv-h h3, .meta, .formula, .adv p, .adv li, .tl-ev, .recall p, .recall li { overflow-wrap: anywhere; }
 .bv-h h3 { min-width: 0; }
 .legend .lg { max-width: 100%; }
+
+.bytes.jws { word-break: break-all; white-space: pre-wrap; }
+.bytes.jws .sg { margin-right: 0; }
+.jose .tabs button { display: inline-flex; align-items: center; gap: 6px; }
+.jose .tabs button .fad-i { color: #3b5ea8; --fa-secondary-opacity: 0.4; }

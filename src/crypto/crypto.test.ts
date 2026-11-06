@@ -4,6 +4,7 @@ import { concat, flipByte, fromHex, fromUtf8, os2ip, rand, toHex, utf8 } from '.
 import { SYM, aesBlock } from './sym';
 import { PKE, HPKE, hpkeSeal, HPKE_INFO } from './pke';
 import { SIG, ecdsaWithK, recoverFromReusedK } from './sig';
+import { joseSign } from './jose';
 import { hmacSha256, lengthExtend, mySha256, naiveMac } from './mac';
 import { sha256 } from './kdf';
 import { p256 } from '@noble/curves/nist.js';
@@ -100,6 +101,23 @@ describe('signatures', () => {
       expect((await A.verify(keys, msg, flipByte(s, 5).out)).ok).toBe(false);
     }, 60000);
   }
+
+  for (const id of ['rsa-pkcs1-sig', 'rsa-pss', 'ecdsa', 'ed25519']) {
+    it(`${id} : JWS compact valide (3 parties, signature vérifiée)`, async () => {
+      const A = SIG[id];
+      const { keys } = await A.keygen();
+      const j = (await joseSign(A, keys, msg))!;
+      expect(j.compact.split('.').length).toBe(3);
+      expect(j.ok).toBe(true);
+    }, 60000);
+  }
+  it('ES256 : la signature JWS se vérifie aussi par WebCrypto sur l\'entrée de signature', async () => {
+    const A = SIG.ecdsa;
+    const { keys } = await A.keygen();
+    const j = (await joseSign(A, keys, msg))!;
+    const ok = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, keys.pub, j.sig.slice().buffer, utf8(j.signingInput).slice().buffer);
+    expect(ok).toBe(true);
+  });
 
   it('ECDSA : le même k pour deux messages révèle la clé privée (PS3)', () => {
     const d = os2ip(p256.utils.randomSecretKey());

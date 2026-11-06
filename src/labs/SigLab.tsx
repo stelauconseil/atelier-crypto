@@ -7,6 +7,7 @@ import { p256 } from '@noble/curves/nist.js';
 import { ByteView, EncodingToggle, type Encoding } from '../components/ByteView';
 import { Card, FormatTabs, Pipeline, Status, useBusy } from '../components/ui';
 import { errText, tamper } from './common';
+import { JoseView } from '../components/JoseView';
 
 type St = { kind: 'ok' | 'ko' | 'info'; text: string } | null;
 
@@ -20,6 +21,7 @@ export function SigLab({ id }: { id: string }) {
   const [sig, setSig] = useState<Seg[] | null>(null);
   const [prev, setPrev] = useState<string | null>(null);
   const [inside, setInside] = useState<View[]>([]);
+  const [signedMsg, setSignedMsg] = useState('');
   const [vInside, setVInside] = useState<View[]>([]);
   const [st, setSt] = useState<St>(null);
   const [st2, setSt2] = useState<St>(null);
@@ -41,7 +43,7 @@ export function SigLab({ id }: { id: string }) {
     try {
       const r = await A.sign(keys, utf8(msg));
       const hex = toHex(concat(...r.sig.map((s) => s.bytes)));
-      setSig(r.sig); setInside(r.inside); setRunS((x) => x + 1);
+      setSig(r.sig); setInside(r.inside); setSignedMsg(msg); setRunS((x) => x + 1);
       const same = prev !== null && prev.split('|')[0] === msg;
       setSt(same
         ? prev!.split('|')[1] === hex ? { kind: 'info', text: 'Même message, même signature : schéma déterministe.' } : { kind: 'info', text: 'Même message, signature différente : schéma probabiliste (aléa dans la signature).' }
@@ -87,6 +89,7 @@ export function SigLab({ id }: { id: string }) {
         </div>
         <Status s={st} />
         {inside.map((v, i) => <ByteView key={i} view={v} encoding={enc} />)}
+        {sig && <JoseView A={A} keys={keys} msg={signedMsg} raw={concat(...sig.map((x) => x.bytes))} run={runS} />}
       </Card>
 
       {sig && (
