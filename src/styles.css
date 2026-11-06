@@ -261,3 +261,28 @@ label.f.fit { flex: 0 0 auto; min-width: 0; }
 .bytes.jws .sg { margin-right: 0; }
 .jose .tabs button { display: inline-flex; align-items: center; gap: 6px; }
 .jose .tabs button .fad-i { color: #3b5ea8; --fa-secondary-opacity: 0.4; }
+
+/* ---------------------------------------------------------------- établissement de clé */
+.chk { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink); cursor: pointer; }
+.chk input { accent-color: var(--navy); }
+.kx-grid { display: grid; grid-template-columns: minmax(110px, auto) 1fr 1fr; gap: 8px; align-items: stretch; }
+.kx-h { font-size: 12px; font-weight: 600; color: var(--mute); display: flex; align-items: center; justify-content: center; text-align: center; }
+.kx-cell { font: inherit; text-align: left; border: 1px solid var(--line); border-radius: 10px; background: var(--panel2); padding: 10px 12px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; color: var(--ink); }
+.kx-cell b { font-family: var(--mono); font-size: 15px; }
+.kx-cell span { font-size: 12px; color: var(--mute); overflow-wrap: anywhere; }
+.kx-cell.on { border-color: var(--navy); box-shadow: 0 0 0 2px color-mix(in srgb, var(--navy) 30%, transparent); background: color-mix(in srgb, var(--navy) 7%, var(--panel2)); }
+.kx-scroll { overflow-x: auto; margin-top: 10px; max-width: 100%; }
+.kx-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.kx-table th { text-align: left; font-size: 11.5px; color: var(--mute); font-weight: 600; border-bottom: 1px solid var(--line); padding: 6px 8px; }
+.kx-table td { border-bottom: 1px solid var(--line); padding: 6px 8px; vertical-align: top; overflow-wrap: anywhere; }
+.kx-table code.sg { font-family: var(--mono); font-size: 12px; border-radius: 4px; padding: 1px 4px; white-space: nowrap; }
+.kx-table code.dup { outline: 2px solid var(--c-tag); outline-offset: 1px; }
+.kx-table tr.lost td { background: color-mix(in srgb, var(--c-tag) 7%, transparent); }
+.kx-table .pill { margin-left: 6px; }
+.kx-uses td:first-child { min-width: 170px; }
+.kx-state { display: grid; gap: 4px; font-size: 12.5px; margin-bottom: 8px; }
+.kx-state > div { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.kx-state span { color: var(--mute); min-width: 170px; }
+.kx-state code { font-family: var(--mono); font-size: 12px; border-radius: 4px; padding: 1px 4px; }
+.kx-state i { font-style: normal; color: var(--mute); font-size: 11.5px; }
+@media (max-width: 1200px) { .kx-grid { grid-template-columns: 90px 1fr 1fr; } }

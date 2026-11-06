@@ -104,6 +104,80 @@ test.describe('robustesse des ateliers', () => {
     });
   }
 
+  test('DH : petit sous-groupe, avec et sans validation', async ({ page }) => {
+    await go(page, '/algo/dh');
+    await page.locator('label.f', { hasText: 'à la place de B' }).locator('select').selectOption('pm1');
+    await page.click("button:has-text('Calculer Z')");
+    await expect(lastStatus(page)).toContainText(/Valeur refusée/);
+    await page.uncheck('text=Alice valide la valeur reçue');
+    await page.click("button:has-text('Calculer Z')");
+    await expect(lastStatus(page)).toContainText(/Validation désactivée/);
+    await page.selectOption('.card select.t >> nth=0', 'ffdhe2048');
+    await page.click("button:has-text('Calculer Z')");
+    await expect(page.locator('.status').first()).toContainText(/Z identique/);
+    await noOverflow(page);
+  });
+
+  test('X25519 : point d\'ordre faible refusé', async ({ page }) => {
+    await go(page, '/algo/x25519');
+    await page.click("button:has-text('Calculer Z')");
+    await expect(lastStatus(page)).toContainText(/Même Z/);
+    await page.locator('label.f', { hasText: 'comme clé publique de Bob' }).locator('select').selectOption('zero');
+    await page.click("button:has-text('Calculer Z')");
+    await expect(lastStatus(page)).toContainText(/refusée/);
+    await noOverflow(page);
+  });
+
+  test('Grille : statique × statique répète Z, la fuite rouvre les sessions', async ({ page }) => {
+    await go(page, '/algo/kex-grid');
+    await page.click('.kx-cell >> nth=0');
+    await page.click("button:has-text('Nouvelle session')");
+    await page.click("button:has-text('Nouvelle session')");
+    await expect(page.locator('code.dup').first()).toBeVisible();
+    await page.click("button:has-text('La clé statique de Bob fuit')");
+    await expect(page.locator('tr.lost')).toHaveCount(2);
+    await page.click('.kx-cell >> nth=3');
+    await page.click("button:has-text('Nouvelle session')");
+    await expect(page.locator('tr.lost')).toHaveCount(2);
+    await expect(page.locator('.kx-uses tbody tr').first()).toBeVisible();
+    await noOverflow(page);
+  });
+
+  test('SIGMA : Mallory passe sans signatures, échoue avec', async ({ page }) => {
+    await go(page, '/algo/sigma');
+    await page.click("button:has-text('Lancer l\\'échange')");
+    await expect(page.locator('.status').first()).toContainText(/deux secrets différents/);
+    await page.check('text=Éphémères signées');
+    await page.click("button:has-text('Lancer l\\'échange')");
+    await expect(page.locator('.status').first()).toContainText(/Échange refusé/);
+    await noOverflow(page);
+  });
+
+  test('Chip Authentication : puce authentique, clone, DG14 remplacé', async ({ page }) => {
+    await go(page, '/algo/chip-auth');
+    await page.click("button:has-text('Lire le passeport')");
+    await expect(page.locator('.status').first()).toContainText(/MAC vérifié/);
+    await page.click(".segctl button:has-text('clone')");
+    await page.click("button:has-text('Lire le passeport')");
+    await expect(page.locator('.status').first()).toContainText(/MAC de Secure Messaging invalide/);
+    await page.click(".segctl button:has-text('DG14 remplacé')");
+    await page.click("button:has-text('Lire le passeport')");
+    await expect(page.locator('.status').first()).toContainText(/Authentification passive en échec/);
+    await noOverflow(page);
+  });
+
+  test('Double Ratchet : vol de l\'état puis auto-guérison', async ({ page }) => {
+    await go(page, '/algo/ratchet');
+    const send = (who: number) => page.locator("button:has-text('Envoyer')").nth(who).click();
+    await send(0); await send(1);
+    await page.click("button:has-text('Ève vole')");
+    await send(1); await send(0); await send(1); await send(0);
+    await expect(page.locator('.kx-table .p-ko').first()).toBeVisible();
+    await expect(page.locator('.kx-table .p-ok').first()).toBeVisible();
+    await expect(lastStatus(page)).toContainText(/Auto-guérison/);
+    await noOverflow(page);
+  });
+
   test('onglets « Pour aller plus loin » et « Le code »', async ({ page }) => {
     await go(page, '/algo/rsa-oaep');
     await page.click(".main-tabs button:has-text('Pour aller plus loin')");

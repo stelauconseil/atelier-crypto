@@ -74,10 +74,10 @@ export function HomePage() {
         <h2><Num n={1} />L'idée-force : tout chiffrement réel est hybride (KEM / DEM)</h2>
         <HybridDiagram />
       </div>
-      <div className="grid3" style={{ marginTop: 14 }}>
+      <div className="grid2" style={{ marginTop: 14 }}>
         {FAMILIES.map((f) => (
           <div className="card famcard" key={f.id}>
-            <h3><Fad icon={f.id === 'sym' ? IC.sym : f.id === 'pke' ? IC.pke : IC.sigFamily} className="ico-l" />{f.label}</h3>
+            <h3><Fad icon={f.id === 'sym' ? IC.sym : f.id === 'kex' ? IC.kex : f.id === 'pke' ? IC.pke : IC.sigFamily} className="ico-l" />{f.label}</h3>
             <div className="meta" style={{ marginTop: 0 }}>{f.sub}</div>
             <div className="chips">
               {ALGOS.filter((a) => a.family === f.id).map((a) => (

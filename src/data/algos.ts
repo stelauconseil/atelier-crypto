@@ -1,4 +1,4 @@
-export type Family = 'sym' | 'pke' | 'sig';
+export type Family = 'sym' | 'kex' | 'pke' | 'sig';
 export type PillTone = 'ok' | 'mid' | 'ko' | 'pq' | 'nt';
 
 export interface AlgoInfo {
@@ -19,6 +19,7 @@ export interface AlgoInfo {
 
 export const FAMILIES: { id: Family; label: string; sub: string }[] = [
   { id: 'sym', label: 'Chiffrement symétrique', sub: 'AES et ses modes, AEAD' },
+  { id: 'kex', label: 'Établissement de clé', sub: 'Diffie-Hellman, statique ou éphémère' },
   { id: 'pke', label: 'Chiffrement asymétrique', sub: 'Du transport de clé au KEM' },
   { id: 'sig', label: 'Signatures', sub: 'De PKCS#1 v1.5 à SLH-DSA' },
 ];
@@ -134,6 +135,63 @@ export const ALGOS: AlgoInfo[] = [
     points: ['Ordre normalisé pour TLS : la partie ML-KEM d\'abord, puis X25519.', 'Protège dès aujourd\'hui contre « harvest now, decrypt later ».', 'X-Wing (projet IETF) combine autrement, avec SHA3-256 et une étiquette.'],
     formula: 'ss = ss_ML-KEM ‖ ss_X25519',
     where: 'TLS 1.3 par défaut dans les navigateurs.', refs: 'draft-ietf-tls-ecdhe-mlkem',
+  },
+  // ------------------------------------------------------------------ établissement de clé
+  {
+    id: 'dh', family: 'kex', name: 'Diffie-Hellman (corps fini)', short: 'DH', year: '1976', status: [['ffdhe ≥ 3072 bits', 'mid'], ['en sursis', 'pq']],
+    lead: 'Deux parties publient gᵃ et gᵇ ; chacune élève la valeur de l\'autre à son propre exposant secret et obtient le même gᵃᵇ, sans jamais l\'avoir transmis.',
+    points: ['Ni chiffrement ni signature : un accord de clé, non interactif et symétrique dans les rôles. Le troisième service de la cryptographie asymétrique.', 'La sécurité repose sur le logarithme discret (et sur l\'hypothèse CDH / DDH) : retrouver a à partir de gᵃ mod p.', 'Z n\'est jamais utilisé tel quel : il passe dans une KDF (HKDF, X9.63, Concat KDF) qui en tire des clés uniformes.', 'Il faut valider la valeur reçue : 1 < Y < p − 1 et Y appartient au sous-groupe d\'ordre q.'],
+    formula: 'A = gᵃ mod p,  B = gᵇ mod p,  Z = Bᵃ = Aᵇ = gᵃᵇ mod p',
+    pitfalls: ['Choisissez le groupe jouet (p = 23) pour suivre les calculs à la main, puis remplacez la valeur publique de Bob par p − 1 et désactivez la validation.'],
+    where: 'TLS (DHE), IKEv2, SSH, OpenPGP ; remplacé presque partout par ECDH et X25519.', refs: 'RFC 7919 · SP 800-56A · RFC 2631',
+  },
+  {
+    id: 'ecdh', family: 'kex', name: 'ECDH P-256', short: 'ECDH', year: '1985 · 2000', status: [['OK', 'ok'], ['en sursis', 'pq']],
+    lead: 'Diffie-Hellman dans le groupe des points d\'une courbe elliptique : Z est l\'abscisse de a·B = b·A = ab·G.',
+    points: ['256 bits sur courbe ≈ 3 072 bits en corps fini (~128 bits de sécurité).', 'Clé publique : point (X, Y), non compressé 04 ‖ X ‖ Y (65 octets) ou compressé 02/03 ‖ X (33 octets).', 'Le point reçu doit être sur la courbe : sinon, attaque par point invalide (Jager, Schwenk, Somorovsky 2015).'],
+    formula: 'Z = x(a · B) = x(b · A) = x(ab · G)',
+    pitfalls: ['Altérez un octet de la clé publique de Bob : le point sort de la courbe et il est refusé.'],
+    where: 'TLS, ECIES, JWE ECDH-ES, passeports (Chip Authentication, PACE), mdoc, Bluetooth LE, FIDO2.', refs: 'SP 800-56A · SEC 1 · FIPS 186-5',
+  },
+  {
+    id: 'x25519', family: 'kex', name: 'X25519 (Curve25519)', short: 'X25519', year: '2006 · 2016', status: [['référence moderne', 'ok'], ['en sursis', 'pq']],
+    lead: 'ECDH sur Curve25519 avec l\'échelle de Montgomery : uniquement la coordonnée u, 32 octets, calcul à temps constant, sans cas particulier.',
+    points: ['Toute chaîne de 32 octets est une clé privée valide après « clamping » : 3 bits bas à 0 (cofacteur 8), bit 255 à 0, bit 254 à 1.', 'Toute chaîne de 32 octets est acceptée comme clé publique : les points d\'ordre faible donnent Z = 0, à refuser.', 'Conçue pour être difficile à mal implémenter (Bernstein, 2006).'],
+    formula: 'Z = X25519(a, u_B) = X25519(b, u_A)',
+    pitfalls: ['Envoyez le point u = 0 à la place de la clé publique de Bob : le secret serait nul.'],
+    where: 'TLS 1.3, SSH, Signal, WireGuard, HPKE, age, Tor, X25519MLKEM768.', refs: 'RFC 7748',
+  },
+  {
+    id: 'kex-grid', family: 'kex', name: 'Statique ou éphémère ?', short: 'Statique / éph.', year: '2006 · SP 800-56A', status: [['notion clé', 'nt']],
+    lead: 'Chaque côté utilise soit une clé statique (longue durée, souvent certifiée), soit une clé éphémère tirée pour la session. Ce choix décide de tout : fraîcheur, confidentialité persistante, authentification.',
+    points: ['Statique : authentifie implicitement son détenteur (lui seul peut calculer Z), mais sa fuite rouvre toutes les sessions où elle a servi.', 'Éphémère : rend Z neuf et, effacée après usage, protège le passé (forward secrecy), mais n\'authentifie personne.', 'Éphémère × éphémère : il faut authentifier autrement, par signatures (SIGMA, TLS 1.3) ou par un mot de passe (PACE, SAE).'],
+    formula: 'C(2e, 0s) · C(1e, 1s) · C(0e, 2s) · C(2e, 2s)  (SP 800-56A)',
+    pitfalls: ['Lancez trois sessions statique × statique : Z ne change jamais. Passez Alice en éphémère, puis faites fuir la clé statique de Bob.'],
+    where: 'Voir le catalogue sous l\'atelier : de TLS au passeport, chaque protocole occupe une case.', refs: 'SP 800-56A Rev. 3 · Noise',
+  },
+  {
+    id: 'sigma', family: 'kex', name: 'DH authentifié (STS, SIGMA)', short: 'SIGMA', year: '1992 · 2003', status: [['schéma de TLS 1.3', 'ok']],
+    lead: 'DH éphémère des deux côtés pour la confidentialité persistante, puis chacun signe les deux valeurs éphémères avec sa clé d\'identité : l\'homme du milieu est démasqué.',
+    points: ['DH « nu » ne protège que contre l\'écoute passive : Mallory peut faire deux échanges et relayer.', 'Station-to-Station (Diffie, van Oorschot, Wiener 1992), puis SIGMA (Krawczyk 2003), base d\'IKEv2 et de TLS 1.3.', 'SIGMA ajoute un MAC sur l\'identité pour lier l\'identité à la clé de session.'],
+    formula: 'σ_B = Sign_B(g^b ‖ g^a),  σ_A = Sign_A(g^a ‖ g^b)',
+    pitfalls: ['Activez Mallory sans signatures : Alice et Bob acceptent, mais avec deux secrets différents, tous deux connus de Mallory.'],
+    where: 'TLS 1.3 (CertificateVerify), IKEv2, SSH (signature de l\'hôte sur H).', refs: 'Krawczyk 2003 · RFC 8446 §4.4.3',
+  },
+  {
+    id: 'chip-auth', family: 'kex', name: 'Chip Authentication (passeport)', short: 'Chip Auth.', year: '2006 · 2009', status: [['ICAO 9303-11', 'ok']],
+    lead: 'Le système d\'inspection fait un ECDH entre une biclé éphémère et la clé statique de la puce, lue dans le DG14 et garantie par la signature de l\'État émetteur. Seule la vraie puce peut ensuite produire des MAC corrects : c\'est l\'anti-clonage.',
+    points: ['La biclé de la puce est propre à chaque document, injectée à la personnalisation ; sa clé publique (DG14) est couverte par le SOD signé par le Document Signer (authentification passive).', 'Authentification implicite : aucune signature, donc aucune preuve transférable, contrairement à l\'Active Authentication.', 'Les clés de session K_Enc et K_MAC remplacent celles de BAC/PACE : le Secure Messaging redémarre.'],
+    formula: 'Z = x(sk_puce · PK_IS) ;  K_Enc = H(Z ‖ 1),  K_MAC = H(Z ‖ 2)',
+    pitfalls: ['Lisez une puce clonée : DG14 et SOD sont parfaitement authentiques, mais le MAC de la première réponse est faux.'],
+    where: 'Passeports européens depuis 2009 (EAC), cartes d\'identité, titres de séjour.', refs: 'ICAO Doc 9303-11 · BSI TR-03110',
+  },
+  {
+    id: 'ratchet', family: 'kex', name: 'Double Ratchet (Signal)', short: 'Double Ratchet', year: '2013 · 2016', status: [['messagerie', 'ok']],
+    lead: 'Deux cliquets : un cliquet DH (nouvelle paire X25519 à chaque changement de sens) et un cliquet symétrique (une KDF dérive une clé par message). Chaque message a sa propre clé.',
+    points: ['Confidentialité persistante : une clé de message volée ne permet pas de remonter aux précédentes.', 'Auto-guérison (post-compromise security) : après le vol de l\'état, le prochain pas DH, tiré sans que l\'attaquant le voie, le remet dehors.', 'Initialisé par X3DH (puis PQXDH avec ML-KEM) ; le DH n\'a lieu qu\'au changement de sens, pas à chaque message.'],
+    formula: '(RK, CK) = KDF_RK(RK, DH(…)) ;  (CK, MK) = KDF_CK(CK)',
+    pitfalls: ['Échangez quelques messages, faites voler l\'état de Bob, puis continuez : Ève lit les premiers messages, puis plus rien.'],
+    where: 'Signal, WhatsApp, Google Messages (RCS), Facebook Messenger ; MLS pour les groupes.', refs: 'Signal Double Ratchet spec (2016)',
   },
   // ------------------------------------------------------------------ signatures
   {

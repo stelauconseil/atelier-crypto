@@ -12,6 +12,8 @@ import {
   faChevronUp, faChevronDown, faPaperPlane, faInbox, faLayerGroup, faFingerprint, faWandMagicSparkles,
   faBinaryLock, faArrowLeft, faArrowRight, faGlobe, faCode, faBookOpenReader, faFlaskVial, faHandPointer, faEye,
   faCalendarRange, faFilter, faFileCode, faGraduationCap,
+  faHandshake, faSquareRootVariable, faBezierCurve, faWaveSine, faGrid2, faUserCheck, faPassport, faArrowsSpin,
+  faUserNinja, faBandage, faMicrochip, faIdCard, faMessages, faEquals, faArrowsRotate,
 } from '@awesome.me/kit-c549591fa3/icons/duotone/solid';
 
 config.autoAddCss = false;
@@ -27,6 +29,8 @@ export const IC = {
   logo: faBinaryLock, prev: faArrowLeft, next: faArrowRight, public: faGlobe, private: faUserSecret, code: faCode,
   deeper: faBookOpenReader, lab: faFlaskVial, pointer: faHandPointer, eye: faEye, period: faCalendarRange,
   filter: faFilter, file: faFileCode, learn: faGraduationCap,
+  kex: faHandshake, attacker: faUserNinja, heal: faBandage, chip: faMicrochip, idcard: faIdCard, chat: faMessages,
+  equal: faEquals, again: faArrowsRotate, clone: faClone,
 } satisfies Record<string, IconDefinition>;
 
 /** Une icône par algorithme : clin d'œil à ce qui le caractérise. */
@@ -52,6 +56,13 @@ export const ALGO_ICON: Record<string, IconDefinition> = {
   ed25519: faFeather, // légèreté, déterminisme
   mldsa: faCube, // le module
   slhdsa: faTrees, // la forêt de Merkle
+  dh: faSquareRootVariable, // l'arithmétique modulaire
+  ecdh: faBezierCurve, // la courbe
+  x25519: faWaveSine, // la courbe de Montgomery
+  'kex-grid': faGrid2, // les quatre cases
+  sigma: faUserCheck, // l'identité signée
+  'chip-auth': faPassport,
+  ratchet: faArrowsSpin, // le cliquet
 };
 
 const NUMS = [faCircle1, faCircle2, faCircle3, faCircle4, faCircle5, faCircle6, faCircle7, faCircle8, faCircle9];

@@ -197,4 +197,96 @@ Pour 128f : k = 33, a = 6, d = 22 ⇒ 17 088 octets. Pour 128s : k = 14, a = 12,
 
 « Sans état » : contrairement à LMS et XMSS, aucun compteur à tenir. L'indice de la feuille est tiré pseudo-aléatoirement du message, et l'hyper-arbre est assez grand pour que les collisions restent négligeables. C'est le descendant normalisé de SPHINCS+.` },
   ],
+  // ------------------------------------------------------------------ établissement de clé
+  dh: [
+    { h: 'Une famille à part entière', t: `Le NIST range DH dans l'**établissement de clé**, aux côtés de deux autres sous-familles :
+
+- **l'accord de clé** : DH, ECDH, X25519 (SP 800-56A). Les deux parties contribuent, aucune ne choisit seule le secret ;
+- **le transport de clé** : une partie choisit la clé et la chiffre pour l'autre, avec RSA-OAEP (SP 800-56B) ;
+- **l'encapsulation (KEM)** : RSA-KEM, ML-KEM (SP 800-227), et DHKEM, qui n'est qu'un DH éphémère-statique mis en forme de KEM.
+
+DH est aussi un **composant** : ECIES et HPKE (pages du chiffrement asymétrique) sont des assemblages « accord de clé + KDF + AEAD », et presque tous les protocoles sécurisés en contiennent au moins un (voir le catalogue de la page « Statique ou éphémère ? »).` },
+    { h: 'Ce que montre l\'atelier', t: `- **Groupe jouet** (p = 23, g = 2, q = 11) : 2 engendre le sous-groupe d'ordre 11 des carrés. Les exposants sont petits : on refait les calculs à la main.
+- **ffdhe2048** (RFC 7919) : p est un nombre premier **sûr** (q = (p − 1)/2 est premier), ses chiffres viennent de e, ce qui écarte tout soupçon de porte dérobée. Les groupes ffdhe3072 et au-delà sont ceux à retenir aujourd'hui.
+
+Les valeurs sont affichées en octets grand-boutistes, sur la taille de p : c'est ainsi que TLS et IKE les transportent, zéros de tête compris (leur suppression en TLS ≤ 1.2 est la cause de l'attaque Raccoon).` },
+    { h: 'Petit sous-groupe et validation', t: `Si Alice élève à sa puissance a une valeur Y choisie par Mallory sans la vérifier :
+
+- Y = 1 ou Y = p − 1 (ordres 1 et 2) : Z vaut 1 ou ±1, Mallory le devine sans rien connaître ;
+- Y d'ordre petit r : Z tombe dans un ensemble de r valeurs, ce qui révèle a mod r. Avec plusieurs petits ordres et le théorème des restes chinois, une clé **statique** fuit entièrement (Lim et Lee, 1997).
+
+Parade (SP 800-56A §5.6.2.3) : vérifier 1 < Y < p − 1 et Yᵠ = 1 mod p, utiliser un nombre premier sûr, et préférer des clés éphémères.` },
+    { h: 'Logjam et la taille des groupes', t: `Le calcul du logarithme discret par crible algébrique se fait en deux temps : un énorme **précalcul** qui ne dépend que de p, puis une résolution rapide pour chaque échange. Logjam (2015) a montré qu'un serveur pouvait être forcé vers le DH « export » de 512 bits, et qu'un précalcul sur quelques groupes de 1024 bits très répandus suffisait à écouter une grande part du trafic VPN et HTTPS. D'où : pas de groupe de moins de 2048 bits, et des groupes nommés plutôt que générés à la volée.` },
+  ],
+  ecdh: [
+    { h: 'Les formats du point', t: `- **Non compressé** : \`04 ‖ X ‖ Y\`, 65 octets (SEC 1). C'est le format de WebCrypto (« raw »), de TLS et du DG14 des passeports.
+- **Compressé** : \`02 ‖ X\` ou \`03 ‖ X\` selon la parité de Y, 33 octets. Y se retrouve en résolvant y² = x³ − 3x + b.
+- **JWK** : \`x\` et \`y\` en base64url ; **SPKI** (DER) dans les certificats.
+
+Le secret Z est l'**abscisse** de a·B, sur 32 octets : l'ordonnée n'apporte rien et n'est pas utilisée.` },
+    { h: 'L\'attaque par point invalide', t: `Les formules d'addition sur une courbe y² = x³ + ax + b n'utilisent pas b. Si l'implémentation ne vérifie pas que le point reçu est sur **la** courbe, Mallory envoie un point d'une autre courbe (même a, autre b) dont l'ordre est petit : comme pour le petit sous-groupe, le résultat révèle d mod r. Avec quelques dizaines de requêtes, une clé ECDH **statique** de serveur TLS a ainsi été extraite (Jager, Schwenk, Somorovsky, 2015).
+
+Parade : vérifier que le point est sur la courbe et n'est pas l'infini (SP 800-56A §5.6.2.3.3). L'atelier le fait : altérez Y et le point est refusé.` },
+    { h: 'P-256, brainpool et compagnie', t: `Les passeports utilisent souvent **brainpoolP256r1** (BSI), aux paramètres générés de façon vérifiable ; les courbes NIST ont des graines inexpliquées, ce qui nourrit une méfiance ancienne mais sans attaque connue. Le principe d'ECDH est identique sur toutes ces courbes de Weierstrass.` },
+  ],
+  x25519: [
+    { h: 'Pourquoi X25519 est plus difficile à mal utiliser', t: `- Seule la coordonnée **u** circule : pas de point à valider ni de format à choisir. Toute chaîne de 32 octets est acceptée.
+- L'**échelle de Montgomery** fait le même calcul quel que soit le bit du scalaire : temps constant naturel.
+- Le « clamping » rend le scalaire multiple de 8 (le cofacteur) : les composantes de petit ordre sont annulées, et le bit 254 fixé empêche les implémentations de prendre un raccourci dépendant du secret.
+- Une clé publique mal formée tombe sur la **tordue** de la courbe, elle aussi choisie sûre.` },
+    { h: 'Le test du secret nul', t: `Les points d'ordre 1, 2, 4 ou 8 donnent Z = 0 après clamping. RFC 7748 §6.1 recommande de rejeter un Z tout à zéro : un attaquant qui envoie u = 0 forcerait un secret connu de tous. Cette vérification a de l'importance dans les protocoles où le secret doit « engager » les deux parties (contributory behaviour), comme certaines constructions de messagerie.` },
+    { h: 'Petit-boutiste', t: `Contrairement à SEC 1, X25519 encode tout en **petit-boutiste** : l'octet 0 est le moins significatif. C'est pourquoi le clamping touche \`k[0]\` (bits bas) et \`k[31]\` (bits hauts). Vecteur de test vérifié par l'atelier : RFC 7748 §6.1.` },
+  ],
+  'kex-grid': [
+    { h: 'La nomenclature SP 800-56A', t: `Le NIST classe les schémas d'accord par le nombre de clés éphémères (e) et statiques (s) utilisées en tout :
+
+- **C(2e, 2s)** : les deux côtés ont une éphémère et une statique (Full Unified Model, MQV) ;
+- **C(2e, 0s)** : éphémère × éphémère, il faut authentifier à part (TLS 1.3) ;
+- **C(1e, 2s)** et **C(1e, 1s)** : une seule passe, l'initiateur éphémère, le répondeur statique (ECIES, HPKE, Chip Authentication) ;
+- **C(0e, 2s)** : statique × statique, sans fraîcheur sans nonces.
+
+Le cadre **Noise** utilise des lettres : \`e\` et \`s\` pour chaque partie, et des motifs (N, K, X, IK, XX…) qui disent quels DH sont faits et dans quel ordre.` },
+    { h: 'Trois propriétés à ne pas confondre', t: `- **Fraîcheur** : le secret change à chaque session. Il suffit d'une éphémère d'un côté, ou de nonces dans la KDF.
+- **Confidentialité persistante** (forward secrecy) : la fuite ultérieure des clés de longue durée ne rouvre pas les sessions passées. Il faut que chaque DH de la session implique au moins une éphémère **effacée**, et en pratique une éphémère de chaque côté.
+- **Authentification implicite** : seul le détenteur de la clé statique peut calculer Z. Elle n'est confirmée que lorsqu'il **utilise** la clé (MAC, chiffré correct), d'où les « key confirmation » des protocoles.
+
+Un piège : en éphémère × statique, la fuite de la clé statique du destinataire rouvre tous les messages passés. C'est le cas d'ECIES et de HPKE en mode Base, et la raison pour laquelle Signal ne s'en contente pas.` },
+    { h: 'Et le post-quantique ?', t: `Un KEM comme ML-KEM ne fait que le cas « éphémère de l'émetteur × statique du destinataire », en une passe interactive : il n'existe pas de « ML-KEM statique × statique » non interactif. Pour remplacer un protocole qui combine plusieurs DH (Noise, X3DH, WireGuard), il faut plusieurs encapsulations (PQ-Noise, KEMTLS) ou une hybridation qui garde X25519 (PQXDH). Les isogénies (CSIDH) offrent un vrai DH post-quantique, mais lent et encore à l'étude depuis la chute de SIDH en 2022.` },
+  ],
+  sigma: [
+    { h: 'L\'homme du milieu', t: `DH protège contre un attaquant **passif**. Un attaquant **actif** fait deux échanges : avec Alice, il se fait passer pour Bob ; avec Bob, pour Alice. Chacun obtient un secret valide, partagé avec Mallory, qui déchiffre, lit, modifie et rechiffre. Rien dans DH seul ne lie la valeur reçue à une identité.` },
+    { h: 'Station-to-Station, puis SIGMA', t: `**STS** (1992) : chacun signe les deux valeurs éphémères (et chiffre sa signature avec la clé de session). Mallory peut relayer les signatures mais pas en fabriquer : Alice vérifie que la signature de Bob porte sur **l'éphémère qu'elle a reçue** et sur la sienne ; avec Mallory au milieu, ce n'est pas le cas.
+
+**SIGMA** (« SIGn-and-MAc », Krawczyk 2003) corrige une faiblesse de STS (attaque par mauvaise attribution d'identité) en ajoutant un **MAC sur l'identité** avec une clé dérivée du secret. IKEv2 en dérive directement ; TLS 1.3 aussi : CertificateVerify signe le haché de toute la transcription, Finished en est le MAC.` },
+    { h: 'Ce que simplifie l\'atelier', t: `Les signatures Ed25519 portent sur \`éphémère propre ‖ éphémère reçue\` ; il n'y a ni certificats ni MAC final. La dérivation de clé et le MAC d'identité de SIGMA-I ne sont pas représentés : l'essentiel, voir pourquoi la signature casse l'attaque, est conservé.` },
+  ],
+  'chip-auth': [
+    { h: 'Trois mécanismes à distinguer', t: `- **Authentification passive** : le SOD contient les hachés des groupes de données (DG1 la MRZ, DG2 la photo, DG14…), signés par le **Document Signer** de l'État émetteur. Elle prouve que les données sont authentiques, pas que la puce l'est : on peut copier DG et SOD sur une autre puce.
+- **Active Authentication** (DG15) : la puce signe un défi du lecteur avec une clé privée. Elle prouve la puce, mais la signature est une **preuve transférable** qu'un document donné a été lu à un instant donné.
+- **Chip Authentication** (DG14) : un ECDH entre la clé statique de la puce et une éphémère du système d'inspection. Elle prouve la puce **implicitement** (seule elle peut calculer les bons MAC) et ne laisse aucune preuve transférable. Elle établit en plus des clés de Secure Messaging fortes.` },
+    { h: 'Le déroulé', t: `1. Le système d'inspection (IS) lit DG14 et SOD, vérifie la signature du SOD (chaîne CSCA → DS) puis le haché du DG14 : la clé publique de la puce est authentique.
+2. Il tire une biclé éphémère sur les mêmes paramètres de domaine et envoie sa clé publique (MSE:Set AT puis General Authenticate).
+3. Chacun calcule Z ; \`K_Enc = H(Z ‖ 00000001)\` et \`K_MAC = H(Z ‖ 00000002)\` (SHA-1 tronqué pour 3DES et AES-128, SHA-256 pour AES-192/256).
+4. Le Secure Messaging redémarre avec ces clés et un compteur SSC remis à zéro. La première réponse dont le MAC se vérifie prouve la puce.
+
+En Chip Authentication v2 (eID, TR-03110), la puce renvoie en plus un nonce et un jeton \`T = MAC(K_MAC, PK_IS)\`. Avec PACE-CAM, l'authentification de la puce est intégrée directement à PACE.` },
+    { h: 'Les simplifications de l\'atelier', t: `- P-256 au lieu de brainpoolP256r1 ou d'autres courbes (le calcul est le même) ;
+- un DG14 réduit à l'OID et au point public, au lieu d'un SET ASN.1 de SecurityInfos ;
+- un SOD réduit au haché et à une signature ECDSA brute, au lieu d'un SignedData CMS ;
+- une seule réponse protégée (DO87, DO8E), sans en-tête de commande ni DO99.
+
+Le DG1 affiché est le spécimen fictif de l'ICAO (Utopie, Anna Maria Eriksson).` },
+    { h: 'Et le statique côté puce ?', t: `C'est la case « éphémère × statique » de la grille : la puce est authentifiée, l'IS ne l'est pas (c'est le rôle de la **Terminal Authentication**, par signature et certificats CV, pour accéder aux empreintes). Si la clé privée de la puce fuyait, les sessions enregistrées seraient lisibles : elle ne quitte jamais la puce, qui la protège matériellement.` },
+  ],
+  ratchet: [
+    { h: 'Les deux cliquets', t: `- **Cliquet symétrique** : chaque chaîne (envoi, réception) avance d'un cran par message. \`MK = HMAC(CK, 01)\` chiffre le message, \`CK′ = HMAC(CK, 02)\` remplace la clé de chaîne. Une fonction à sens unique : voler CK ne permet pas de remonter aux messages précédents.
+- **Cliquet DH** : à chaque changement de sens, l'émetteur tire une nouvelle paire X25519 et la met dans l'en-tête. Le destinataire fait un pas DH : \`(RK, CKr) = KDF_RK(RK, DH(sa clé, nouvelle clé reçue))\`, puis tire lui-même une nouvelle paire pour sa prochaine chaîne d'envoi.
+
+Le DH n'a donc **pas** lieu à chaque message : une rafale de messages dans le même sens utilise la même clé DH, avec des clés de message différentes tirées de la chaîne symétrique.` },
+    { h: 'Confidentialité persistante et auto-guérison', t: `- **Vers le passé** : une clé de message ou de chaîne volée ne donne rien sur les messages antérieurs (sens unique des KDF, éphémères effacées).
+- **Vers le futur** (post-compromise security) : si tout l'état d'un appareil est copié, l'attaquant suit la conversation tant qu'elle reste sur des clés qu'il possède. Au premier pas DH tiré **après** le vol, avec une clé privée qu'il n'a pas vue, il perd la piste. Un attaquant **actif** qui garde l'appareil compromis échappe à cette guérison : elle ne vaut que contre une copie ponctuelle.` },
+    { h: 'L\'en-tête et les messages désordonnés', t: `L'en-tête porte la clé publique de ratchet, **PN** (longueur de la chaîne d'envoi précédente) et **N** (rang dans la chaîne actuelle). Avec PN, le destinataire sait combien de clés de l'ancienne chaîne il doit dériver et garder en réserve pour des messages arrivés en retard. L'atelier livre tout dans l'ordre et ne gère pas ces clés sautées.
+
+Dans Signal, l'en-tête est lui-même chiffré (header encryption) et le secret initial vient de **X3DH** (quatre DH : IK_A×SPK_B, EK_A×IK_B, EK_A×SPK_B, EK_A×OPK_B), remplacé en 2023 par **PQXDH**, qui ajoute une encapsulation ML-KEM. En octobre 2025, Signal a ajouté un cliquet post-quantique, SPQR (fondé sur ML-KEM-768), dont la sortie est mélangée à celle du Double Ratchet par une KDF : c'est le « Triple Ratchet ».` },
+  ],
 };

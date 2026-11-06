@@ -13,6 +13,7 @@ Benoit LEGER-DERVILLE · Stelau · iDAKTO
 | Famille | Algorithmes |
 |---|---|
 | Symétrique | AES-ECB, AES-CBC, AES-CTR, AES-GCM, AES-GCM-SIV, ChaCha20-Poly1305, AES-KW |
+| Établissement de clé | Diffie-Hellman (corps fini, jouet et ffdhe2048), ECDH P-256, X25519, grille statique / éphémère avec le catalogue des protocoles qui utilisent DH, DH authentifié (SIGMA, homme du milieu), Chip Authentication des passeports (anti-clonage), Double Ratchet de Signal (vol d'état, auto-guérison) |
 | Chiffrement asymétrique | RSA brut, RSAES-PKCS1-v1_5, RSAES-OAEP, RSA-KEM, ECIES (P-256, variante Apple), HPKE (RFC 9180), ML-KEM-768, X25519MLKEM768 |
 | Signatures | RSASSA-PKCS1-v1_5, RSASSA-PSS, ECDSA P-256 (+ attaque « PS3 » du nonce réutilisé), Ed25519, ML-DSA-65, SLH-DSA (128f / 128s) |
 | Pages transverses | Frise historique filtrable, Notions (extension de longueur SHA-256(K ‖ M) contre HMAC, paradoxe des anniversaires), glossaire |
@@ -25,7 +26,7 @@ Pour chaque algorithme : une fiche de rappel (issue des planches), de vrais cham
 
 - **WebCrypto** du navigateur : AES-CBC/CTR/GCM, RSA-OAEP (déchiffrement), RSASSA-PKCS1-v1_5, RSA-PSS, ECDSA, ECDH.
 - **@noble** (ciphers, curves, hashes, post-quantum) : ECB, GCM-SIV, ChaCha20-Poly1305, AES-KW, X25519, Ed25519, ML-KEM, ML-DSA, SLH-DSA.
-- **Écrit à la main** (`src/crypto/`), pour que tout se voie : RSA brut (BigInt), PKCS#1 v1.5, encodage OAEP
+- **Écrit à la main** (`src/crypto/`), pour que tout se voie : DH et sa validation, grille statique / éphémère, SIGMA, Chip Authentication (KDF ICAO, Secure Messaging AES-CBC + CMAC), Double Ratchet, RSA brut (BigInt), PKCS#1 v1.5, encodage OAEP
   (déchiffré ensuite par WebCrypto, preuve d'interopérabilité), RSA-KEM, ECIES, HPKE mode Base
   (vérifié contre `@hpke/core`), SHA-256 en Merkle-Damgård explicite, ECDSA à nonce fixé.
 
@@ -46,7 +47,7 @@ ou remplacer `src/lib/icons.tsx` par des icônes libres (`@fortawesome/free-soli
 ```bash
 vp install          # dépendances
 vp dev              # serveur de développement
-vp test             # 44 tests : allers-retours, altérations, interopérabilité, attaques
+vp test             # 61 tests : allers-retours, altérations, interopérabilité, attaques
 vp build            # build statique dans dist/
 SINGLE=1 vp build   # un seul fichier HTML autonome dans dist-single/
 vp run test:e2e     # tests Playwright (script du package.json ; aussi : npm run test:e2e)
@@ -63,7 +64,7 @@ chaque atelier affiche le bon verdict (⊥ après altération, JWS vérifié, or
 
 ```bash
 npx playwright install chromium   # une fois
-npm run test:e2e                  # build + vp preview, puis les 42 tests
+npm run test:e2e                  # build + vp preview, puis les 54 tests
 ATELIER_URL=file://$PWD/dist-single/index.html npm run test:e2e   # sur un build en fichier unique
 ```
 

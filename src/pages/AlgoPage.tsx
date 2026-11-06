@@ -8,6 +8,7 @@ import { Pills, Recall } from '../components/ui';
 import { SymLab } from '../labs/SymLab';
 import { PkeLab } from '../labs/PkeLab';
 import { SigLab } from '../labs/SigLab';
+import { KexLab } from '../labs/KexLab';
 
 export function AlgoPage() {
   const { id } = useParams({ from: '/algo/$id' });
@@ -42,6 +43,7 @@ function AlgoView({ id }: { id: string }) {
         <Recall a={a} />
         <div style={{ height: 14 }} />
         {a.family === 'sym' && <SymLab id={id} defaultText={a.defaultText} />}
+        {a.family === 'kex' && <KexLab id={id} />}
         {a.family === 'pke' && <PkeLab id={id} />}
         {a.family === 'sig' && <SigLab id={id} />}
       </div>
