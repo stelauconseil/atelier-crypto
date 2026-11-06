@@ -51,4 +51,12 @@ src/
   pages/      Layout · HomePage · AlgoPage · HistoryPage · NotionsPage
 ```
 
-Stack : Vite+ (Vite 8, Vitest 5), React 19, TanStack Router, GSAP.
+Stack : Vite+ (Vite 8, Vitest 5), React 19, TanStack Router, GSAP. Police à chasse fixe : Monaspace Argon (OFL).
+
+## Palette des octets
+
+`src/palette.css` : douze familles de rôles, une encre par famille (clair et sombre), validées par calcul
+sur les juxtapositions réelles de l'app (pire écart daltonien entre voisins ΔE 7,3 / 6,3, vision normale ≥ 16,9).
+La couleur n'est jamais seule : légende nommée, espace entre segments, hachures (bourrage, masques),
+pointillés (octets de format). La page `#/palette` montre la palette en situation et permet de revenir
+à celle des planches PDF.

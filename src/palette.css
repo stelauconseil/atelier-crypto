@@ -1,0 +1,94 @@
+/*
+ * Palette des octets : une couleur d'encre par famille de rôle.
+ * « atelier » (par défaut) a été validée par calcul (OKLab, simulation protan/deutan/tritan)
+ * sur les juxtapositions réelles de l'app : pire écart daltonien adjacent ΔE 7,3 (clair) / 6,3 (sombre),
+ * pire écart en vision normale ΔE 16,9 / 17,8. Le codage secondaire (légende nommée, espace entre segments,
+ * hachures pour bourrage et masques, pointillés pour les octets de format) couvre la zone 6–8.
+ */
+:root,
+[data-palette='atelier'] {
+  --c-secret: #9f1239;
+  --c-pub: #059669;
+  --c-rand: #a16207;
+  --c-pt: #1d4ed8;
+  --c-ct: #0f766e;
+  --c-tag: #e11d48;
+  --c-hdr: #4b5563;
+  --c-pad: #a855f7;
+  --c-enc: #ea580c;
+  --c-sig: #6d28d9;
+  --c-hash: #0284c7;
+  --c-aad: #64748b;
+}
+[data-theme='dark'],
+[data-theme='dark'][data-palette='atelier'] {
+  --c-secret: #fda4af;
+  --c-pub: #10b981;
+  --c-rand: #ca8a04;
+  --c-pt: #6ea0ff;
+  --c-ct: #2dd4bf;
+  --c-tag: #db2777;
+  --c-hdr: #737885;
+  --c-pad: #a855f7;
+  --c-enc: #fb923c;
+  --c-sig: #8b5cf6;
+  --c-hash: #7dd3fc;
+  --c-aad: #94a3b8;
+}
+
+/* Ancienne palette, alignée sur les planches PDF (pour comparaison). */
+[data-palette='planches'] {
+  --c-secret: #b5541a;
+  --c-pub: #23633f;
+  --c-rand: #8a6a00;
+  --c-pt: #1f3561;
+  --c-ct: #0a6363;
+  --c-tag: #8a1650;
+  --c-hdr: #3c4658;
+  --c-pad: #4f3290;
+  --c-enc: #1b4f86;
+  --c-sig: #3f2a86;
+  --c-hash: #145a6b;
+  --c-aad: #46536b;
+}
+[data-theme='dark'][data-palette='planches'] {
+  --c-secret: #ffb27a;
+  --c-pub: #8fdcb0;
+  --c-rand: #f0d36a;
+  --c-pt: #b5c8f2;
+  --c-ct: #79d6d6;
+  --c-tag: #f39ac6;
+  --c-hdr: #c0c8d6;
+  --c-pad: #c4b2f2;
+  --c-enc: #9cc9f5;
+  --c-sig: #c3b6f5;
+  --c-hash: #8fd4e6;
+  --c-aad: #b3bdd1;
+}
+
+.t-key, .t-priv, .t-secret { --c: var(--c-secret); }
+.t-pub { --c: var(--c-pub); }
+.t-nonce, .t-salt { --c: var(--c-rand); }
+.t-pt { --c: var(--c-pt); }
+.t-ct { --c: var(--c-ct); }
+.t-tag { --c: var(--c-tag); }
+.t-hdr { --c: var(--c-hdr); }
+.t-pad, .t-mask { --c: var(--c-pad); }
+.t-enc { --c: var(--c-enc); }
+.t-sig { --c: var(--c-sig); }
+.t-hash { --c: var(--c-hash); }
+.t-aad { --c: var(--c-aad); }
+
+[class*=' t-'], [class^='t-'] {
+  color: var(--c);
+  background-color: color-mix(in srgb, var(--c) 11%, transparent);
+  border-color: color-mix(in srgb, var(--c) 55%, transparent);
+}
+/* Textures : le bourrage et les masques sont hachurés, les octets de format en pointillés. */
+.sg.t-pad, .sg.t-mask, .lg.t-pad, .lg.t-mask {
+  background-image: repeating-linear-gradient(135deg, color-mix(in srgb, var(--c) 16%, transparent) 0 3px, transparent 3px 7px);
+}
+.sg.t-hdr { background-color: transparent; outline: 1px dashed color-mix(in srgb, var(--c) 70%, transparent); outline-offset: -1px; }
+.lg.t-hdr { border-style: dashed; }
+/* le clair et le privé gardent une graisse plus forte pour se détacher */
+.sg.t-priv, .sg.t-pt { font-weight: 600; }

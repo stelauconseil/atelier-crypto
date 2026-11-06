@@ -65,8 +65,8 @@ export function SigLab({ id }: { id: string }) {
 
   return (
     <>
-      <Card n={2} title="Signataire : sa biclé" right={<span className="row">
-        {A.variants && <select className="t" style={{ width: 'auto' }} value={variant} onChange={(e) => setVariant(e.target.value)}>{A.variants.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}</select>}
+      <Card n={2} title="Signataire : sa biclé" right={<span className="ctrls">
+        {A.variants && <select className="t" value={variant} onChange={(e) => setVariant(e.target.value)}>{A.variants.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}</select>}
         <EncodingToggle value={enc} onChange={setEnc} />
         <button className="btn b-ghost b-sm" disabled={!!busy} onClick={keygen}>{busy === 'keygen' ? 'Génération…' : 'Nouvelle biclé'}</button></span>}>
         <div className="grid2">

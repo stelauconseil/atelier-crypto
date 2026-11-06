@@ -78,14 +78,18 @@ export function SymLab({ id, defaultText }: { id: string; defaultText?: string }
       <Card n={2} title="Émetteur : clé, paramètres et clair" right={<EncodingToggle value={enc} onChange={setEnc} />}>
         <Pipeline label="Chiffrer" steps={A.pipelineEnc} run={runE} />
         <div className="row">
-          <label className="f" style={{ flex: 2 }}>
-            <span className="lab"><span>Clé K ({(keyBytes?.length ?? 0) * 8} bits, hex)</span>
-              <span>
+          {A.keyLens.length > 1 && (
+            <label className="f fit">
+              <span className="lab"><span>Taille (bits)</span></span>
+              <span className="segctl">
                 {A.keyLens.map((n) => (
-                  <button key={n} className={`btn b-sm ${n === keyLen ? 'b-pri' : 'b-ghost'}`} style={{ marginLeft: 4 }} onClick={() => { setKeyLen(n); newKey(n); }}>{n * 8}</button>
+                  <button key={n} className={n === keyLen ? 'on' : ''} onClick={() => { setKeyLen(n); newKey(n); }}>{n * 8}</button>
                 ))}
               </span>
-            </span>
+            </label>
+          )}
+          <label className="f" style={{ flex: 2 }}>
+            <span className="lab"><span>{A.hexPlaintext ? 'KEK' : 'Clé K'} ({(keyBytes?.length ?? 0) * 8} bits, hex, secrète)</span></span>
             <input className="t mono" value={keyHex} onChange={(e) => setKeyHex(e.target.value)} />
           </label>
           <button className="btn b-ghost" onClick={() => newKey()}>Nouvelle clé</button>
@@ -93,7 +97,7 @@ export function SymLab({ id, defaultText }: { id: string; defaultText?: string }
         {A.nonceLen > 0 && (
           <div className="row" style={{ marginTop: 8 }}>
             <label className="f" style={{ flex: 2 }}>
-              <span className="lab"><span>{A.nonceName} ({A.nonceLen} octets, hex, public)</span></span>
+              <span className="lab"><span>{A.nonceName} · {A.nonceLen} octets, hex, public</span></span>
               <input className="t mono" value={nonceHex} onChange={(e) => setNonceHex(e.target.value)} />
             </label>
             <button className="btn b-ghost" onClick={newNonce}>Nouveau nonce</button>

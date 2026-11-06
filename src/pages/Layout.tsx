@@ -1,11 +1,13 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { ALGOS, FAMILIES } from '../data/algos';
+import { usePalette } from '../lib/prefs';
 
 export function Layout() {
   const [theme, setTheme] = useState<string>(() => {
     try { return localStorage.getItem('atelier-theme') ?? 'light'; } catch { return 'light'; }
   });
+  const [palette, setPalette] = usePalette();
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     try { localStorage.setItem('atelier-theme', theme); } catch { /* stockage indisponible */ }
@@ -25,6 +27,7 @@ export function Layout() {
           <Link to="/" activeOptions={{ exact: true }} activeProps={{ className: 'active' }}>Accueil</Link>
           <Link to="/histoire" activeProps={{ className: 'active' }}>Histoire en frise</Link>
           <Link to="/notions" activeProps={{ className: 'active' }}>Notions : MAC, anniversaires…</Link>
+          <Link to="/palette" activeProps={{ className: 'active' }}>Palette des octets</Link>
         </nav>
         {FAMILIES.map((f) => (
           <div className="nav-sec" key={f.id}>
@@ -44,6 +47,9 @@ export function Layout() {
           <br />Benoit LEGER-DERVILLE · Stelau · iDAKTO
           <button className="theme-btn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
             {theme === 'dark' ? '☀ Thème clair' : '☾ Thème sombre'}
+          </button>
+          <button className="theme-btn" onClick={() => setPalette(palette === 'atelier' ? 'planches' : 'atelier')}>
+            Palette : {palette === 'atelier' ? 'atelier' : 'planches PDF'}
           </button>
         </div>
       </aside>

@@ -2,11 +2,13 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider, createHashHistory, createMemoryHistory, createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
 import './styles.css';
+import './palette.css';
 import { Layout } from './pages/Layout';
 import { HomePage } from './pages/HomePage';
 import { AlgoPage } from './pages/AlgoPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { NotionsPage } from './pages/NotionsPage';
+import { PalettePage } from './pages/PalettePage';
 
 const root = createRootRoute({ component: Layout });
 const routes = [
@@ -14,6 +16,7 @@ const routes = [
   createRoute({ getParentRoute: () => root, path: '/algo/$id', component: AlgoPage }),
   createRoute({ getParentRoute: () => root, path: '/histoire', component: HistoryPage }),
   createRoute({ getParentRoute: () => root, path: '/notions', component: NotionsPage }),
+  createRoute({ getParentRoute: () => root, path: '/palette', component: PalettePage }),
 ];
 
 // Historique par fragment (#/…) : l'app fonctionne hébergée n'importe où ou ouverte depuis le disque.

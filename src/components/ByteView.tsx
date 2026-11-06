@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { concat, toB64, toHex, type Bytes } from '../lib/bytes';
 import type { Seg, View } from '../crypto/types';
@@ -12,16 +12,21 @@ const TONE_NAME: Record<string, string> = {
 
 const MAX = 96; // au-delà, les longs segments sont abrégés
 
-function SegBytes({ s, full, onExpand }: { s: Seg; full: boolean; onExpand: () => void }) {
+function SegBytes({ s, full, onToggle }: { s: Seg; full: boolean; onToggle: () => void }) {
   const b = s.bytes;
-  const show = full || b.length <= MAX;
+  const long = b.length > MAX;
   const render = (arr: Bytes, off = 0) => Array.from(arr, (x, i) => <span className="by" key={off + i}>{x.toString(16).padStart(2, '0')}</span>);
   return (
     <span className={`sg t-${s.tone}`} title={`${s.label} — ${b.length} octet(s)${s.note ? ' — ' + s.note : ''}`}>
-      {show ? render(b) : (
+      {!long ? render(b) : full ? (
+        <>
+          {render(b)}
+          <button className="fold" onClick={onToggle}>▲ replier</button>
+        </>
+      ) : (
         <>
           {render(b.slice(0, 40))}
-          <span className="gap" onClick={onExpand}>… {b.length - 56} octets masqués (cliquer) …</span>
+          <button className="gap" onClick={onToggle}>… afficher les {b.length - 56} octets masqués …</button>
           {render(b.slice(-16), b.length - 16)}
         </>
       )}
@@ -30,6 +35,7 @@ function SegBytes({ s, full, onExpand }: { s: Seg; full: boolean; onExpand: () =
 }
 
 function Blocks({ segs, block, repeats }: { segs: Seg[]; block: number; repeats?: boolean }) {
+  const [all_, setAll] = useState(false);
   // Découpe la concaténation des segments en blocs, en conservant la couleur de chaque octet.
   const tones: string[] = [];
   segs.forEach((s) => s.bytes.forEach(() => tones.push(s.tone)));
@@ -41,12 +47,12 @@ function Blocks({ segs, block, repeats }: { segs: Seg[]; block: number; repeats?
   }
   const count = new Map<string, number>();
   blocks.forEach((b) => count.set(b.hex, (count.get(b.hex) ?? 0) + 1));
-  const shown = blocks.length > 24 ? [...blocks.slice(0, 16), null, ...blocks.slice(-4)] : blocks;
+  const shown = blocks.length > 24 && !all_ ? [...blocks.slice(0, 16), null, ...blocks.slice(-4)] : blocks;
   return (
     <>
       {shown.map((b, i) =>
         b === null ? (
-          <span className="blk gap" key="gap">… {blocks.length - 20} blocs masqués …</span>
+          <button className="blk gap" key="gap" onClick={() => setAll(true)}>… afficher les {blocks.length - 20} blocs masqués …</button>
         ) : (
           <span className={`blk ${repeats && (count.get(b.hex) ?? 0) > 1 ? 'rep' : ''}`} key={i}>
             <span className="bn">{String(blocks.indexOf(b) + 1).padStart(2, '0')}</span>
@@ -58,6 +64,7 @@ function Blocks({ segs, block, repeats }: { segs: Seg[]; block: number; repeats?
           </span>
         ),
       )}
+      {all_ && blocks.length > 24 && <button className="fold" onClick={() => setAll(false)}>▲ replier</button>}
     </>
   );
 }
@@ -67,6 +74,8 @@ export function ByteView({ view, encoding = 'hex', animate = true }: { view: Vie
   const [full, setFull] = useState<Record<number, boolean>>({});
   const total = useMemo(() => (view.segs ?? []).reduce((n, s) => n + s.bytes.length, 0), [view]);
   const sig = useMemo(() => (view.segs ?? []).map((s) => toHex(s.bytes.slice(0, 8))).join('|') + (view.text ?? ''), [view]);
+
+  useEffect(() => setFull({}), [sig]);
 
   useLayoutEffect(() => {
     if (!animate || !ref.current) return;
@@ -108,7 +117,7 @@ export function ByteView({ view, encoding = 'hex', animate = true }: { view: Vie
               {view.block ? (
                 <Blocks segs={view.segs} block={view.block} repeats={view.repeats} />
               ) : (
-                view.segs.map((s, i) => <SegBytes key={i} s={s} full={!!full[i]} onExpand={() => setFull({ ...full, [i]: true })} />)
+                view.segs.map((s, i) => <SegBytes key={i} s={s} full={!!full[i]} onToggle={() => setFull({ ...full, [i]: !full[i] })} />)
               )}
             </div>
           )}
