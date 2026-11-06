@@ -104,7 +104,7 @@ export const RSA_TEXTBOOK: PkeAlgo<RsaKeys> = {
   },
 };
 
-function pkcs1v15Encode(K: RsaKeys, M: Bytes): { em: Bytes; ps: Bytes } {
+export function pkcs1v15Encode(K: RsaKeys, M: Bytes): { em: Bytes; ps: Bytes } {
   const psLen = K.k - M.length - 3;
   if (psLen < 8) throw new CryptoRejected(`Message trop long : ${K.k - 11} octets au plus pour RSA-2048.`);
   const ps = new Uint8Array(psLen);

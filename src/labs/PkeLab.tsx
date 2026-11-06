@@ -7,6 +7,8 @@ import { seg } from '../crypto/types';
 import { ByteView, EncodingToggle, type Encoding } from '../components/ByteView';
 import { Card, FormatTabs, Pipeline, Status, useBusy } from '../components/ui';
 import { errText, tamper } from './common';
+import { JweView } from '../components/JweView';
+import { JWE } from '../crypto/jwe';
 
 type St = { kind: 'ok' | 'ko' | 'info'; text: string } | null;
 
@@ -89,6 +91,7 @@ export function PkeLab({ id }: { id: string }) {
         <div className="actions"><button className="btn b-pri" disabled={!keys || !!busy} onClick={encrypt}><Fad icon={IC.lock} />Chiffrer pour le destinataire</button></div>
         <Status s={st} />
         {inside.map((v, i) => <ByteView key={i} view={v} encoding={enc} />)}
+        {JWE[id] && <JweView id={id} keys={keys} msg={pt} run={runE} />}
       </Card>
 
       {wire && (

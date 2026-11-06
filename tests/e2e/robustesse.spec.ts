@@ -91,6 +91,19 @@ test.describe('robustesse des ateliers', () => {
     await noOverflow(page);
   });
 
+  for (const [algo, alg] of [['rsa-oaep', 'RSA-OAEP-256'], ['rsa-pkcs1', 'RSA1_5'], ['ecies', 'ECDH-ES'], ['hpke', 'HPKE-3']]) {
+    test(`${algo} : format JWE ${alg} et déchiffrement`, async ({ page }) => {
+      await go(page, `/algo/${algo}`);
+      await page.waitForTimeout(algo.startsWith('rsa') ? 2500 : 600);
+      await page.locator("button:has-text('Chiffrer pour le destinataire')").click();
+      await expect(page.locator('.jose .status')).toContainText(/JWE déchiffré/);
+      await expect(page.locator('.jose .meta')).toContainText(alg);
+      await page.click(".jose button:has-text('JWE JSON général')");
+      await expect(page.locator('.jose pre.txt').first()).toContainText('"recipients"');
+      await noOverflow(page);
+    });
+  }
+
   test('onglets « Pour aller plus loin » et « Le code »', async ({ page }) => {
     await go(page, '/algo/rsa-oaep');
     await page.click(".main-tabs button:has-text('Pour aller plus loin')");
