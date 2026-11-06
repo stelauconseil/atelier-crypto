@@ -7,3 +7,5 @@ dist-single
 # secret Font Awesome (jeton) : ne jamais commiter
 .npmrc
 .preview
+test-results
+playwright-report

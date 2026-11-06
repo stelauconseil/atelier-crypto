@@ -37,6 +37,19 @@ vp build            # build statique dans dist/
 SINGLE=1 vp build   # un seul fichier HTML autonome dans dist-single/
 ```
 
+### Tests de robustesse de l'interface (Playwright)
+
+`tests/e2e/robustesse.spec.ts` parcourt les ateliers avec des saisies extrêmes (300 caractères sans espace,
+émoji, message vide, hexadécimal invalide, message trop long pour RSA), à 1 440 et 1 100 pixels de large.
+Il vérifie qu'aucun élément ne déborde horizontalement, qu'aucune erreur JavaScript n'apparaît et que
+chaque atelier affiche le bon verdict (⊥ après altération, JWS vérifié, oracle de remplissage…).
+
+```bash
+npx playwright install chromium   # une fois
+npm run test:e2e                  # build + vp preview, puis les 34 tests
+ATELIER_URL=file://$PWD/dist-single/index.html npm run test:e2e   # sur un build en fichier unique
+```
+
 Le routage utilise le fragment d'URL (`#/algo/gcm`) : le build fonctionne hébergé n'importe où
 (GitHub Pages, Netlify) ou ouvert directement depuis le disque.
 
