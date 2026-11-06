@@ -124,4 +124,9 @@ describe('MAC et extension de longueur', () => {
     expect(toHex(hmacSha256(key, forgedMsg))).not.toBe(toHex(forgedTag));
   });
   it('fromHex', () => expect(toHex(fromHex('de ad be ef'))).toBe('deadbeef'));
+  it('fromHex refuse les caractères non hexadécimaux', () => expect(() => fromHex('zz12')).toThrow());
+  it('RSA textbook refuse m ≥ n', async () => {
+    const { keys } = await PKE['rsa-textbook'].keygen();
+    await expect(PKE['rsa-textbook'].encrypt(keys, new Uint8Array(300).fill(0x41))).rejects.toThrow();
+  });
 });

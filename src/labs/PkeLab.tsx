@@ -1,6 +1,6 @@
 import { Fad, IC } from '../lib/icons';
 import { useEffect, useState } from 'react';
-import { concat, fromUtf8, toHex, utf8 } from '../lib/bytes';
+import { concat, fromUtf8, quote, toHex, utf8 } from '../lib/bytes';
 import { PKE } from '../crypto/pke';
 import type { Seg, View } from '../crypto/types';
 import { seg } from '../crypto/types';
@@ -102,7 +102,7 @@ export function PkeLab({ id }: { id: string }) {
           <Pipeline label="Déchiffrer" steps={A.pipelineDec} run={runD} />
           <div className="actions"><button className="btn b-teal" disabled={!!busy} onClick={decrypt}><Fad icon={IC.unlock} />Déchiffrer</button></div>
           <Status s={st2} />
-          {result !== null && <ByteView view={{ title: 'Clair obtenu', caption: `« ${result} »`, segs: [seg('Clair', utf8(result), 'pt')] }} encoding={enc} />}
+          {result !== null && <ByteView view={{ title: 'Clair obtenu', caption: quote(result), segs: [seg('Clair', utf8(result), 'pt')] }} encoding={enc} />}
           {outInside.map((v, i) => <ByteView key={i} view={v} encoding={enc} />)}
         </Card>
       )}

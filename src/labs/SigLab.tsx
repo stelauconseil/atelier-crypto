@@ -1,6 +1,6 @@
 import { Fad, IC } from '../lib/icons';
 import { useEffect, useState } from 'react';
-import { concat, i2osp, os2ip, toHex, utf8 } from '../lib/bytes';
+import { concat, i2osp, os2ip, quote, toHex, utf8 } from '../lib/bytes';
 import { SIG, ecdsaWithK, recoverFromReusedK } from '../crypto/sig';
 import { seg, type Seg, type View } from '../crypto/types';
 import { p256 } from '@noble/curves/nist.js';
@@ -91,7 +91,7 @@ export function SigLab({ id }: { id: string }) {
 
       {sig && (
         <Card n={4} title="Transmis : le message et sa signature" right={<button className="btn b-red b-sm" onClick={() => { const t = tamper(sig, ['sig', 'hash', 'salt']); setSig(t.segs); setSt2({ kind: 'info', text: `Un bit inversé dans la signature : ${t.where}.` }); }}><Fad icon={IC.bolt} />Altérer la signature</button>}>
-          <ByteView view={{ title: 'Message', caption: `« ${msg} »`, segs: [seg('M', utf8(msg), 'pt')] }} encoding={enc} />
+          <ByteView view={{ title: 'Message', caption: quote(msg), segs: [seg('M', utf8(msg), 'pt')] }} encoding={enc} />
           <ByteView view={{ title: 'Signature σ', segs: sig }} encoding={enc} />
         </Card>
       )}

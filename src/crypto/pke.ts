@@ -81,6 +81,7 @@ export const RSA_TEXTBOOK: PkeAlgo<RsaKeys> = {
   keygen: rsaKeygen,
   async encrypt(K, pt) {
     const m = os2ip(pt);
+    if (m >= K.n) throw new CryptoRejected(`m doit être strictement inférieur à n : ${pt.length} octets, c'est trop pour un module de ${K.k} octets (sinon m serait réduit modulo n et perdu).`);
     const c = rsaPub(K, m);
     return {
       wire: [seg('c = mᵉ mod n', i2osp(c, K.k), 'ct', 'déterministe : rechiffrer donne le même c')],

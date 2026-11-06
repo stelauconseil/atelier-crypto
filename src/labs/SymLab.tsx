@@ -1,6 +1,6 @@
 import { Fad, IC } from '../lib/icons';
 import { useMemo, useState } from 'react';
-import { concat, fromHex, fromUtf8, rand, toHex, utf8 } from '../lib/bytes';
+import { concat, fromHex, fromUtf8, quote, rand, toHex, utf8 } from '../lib/bytes';
 import { SYM } from '../crypto/sym';
 import { seg, type Seg, type View } from '../crypto/types';
 import { ByteView, EncodingToggle, type Encoding } from '../components/ByteView';
@@ -35,6 +35,7 @@ export function SymLab({ id, defaultText }: { id: string; defaultText?: string }
   async function encrypt() {
     setSt2(null); setResult(null); setOutInside([]);
     try {
+      if (!keyBytes) fromHex(keyHex); // relance l'erreur de saisie précise
       if (!keyBytes || !A.keyLens.includes(keyBytes.length)) throw new Error(`clé de ${A.keyLens.map((n) => n * 8).join(', ')} bits attendue`);
       const nonce = A.nonceLen ? fromHex(nonceHex) : new Uint8Array(0);
       if (A.nonceLen && nonce.length !== A.nonceLen) throw new Error(`${A.nonceName} : ${A.nonceLen} octets attendus`);
@@ -134,7 +135,7 @@ export function SymLab({ id, defaultText }: { id: string; defaultText?: string }
           <Pipeline label="Déchiffrer" steps={A.pipelineDec} run={runD} />
           <div className="actions"><button className="btn b-teal" onClick={decrypt}><Fad icon={IC.unlock} />Déchiffrer</button></div>
           <Status s={st2} />
-          {result !== null && <ByteView view={{ title: 'Clair obtenu', segs: [seg('Clair', A.hexPlaintext ? fromHex(result) : utf8(result), 'pt')], caption: A.hexPlaintext ? undefined : `« ${result} »` }} encoding={enc} />}
+          {result !== null && <ByteView view={{ title: 'Clair obtenu', segs: [seg('Clair', A.hexPlaintext ? fromHex(result) : utf8(result), 'pt')], caption: A.hexPlaintext ? undefined : quote(result) }} encoding={enc} />}
           {outInside.map((v, i) => <ByteView key={i} view={v} encoding={enc} />)}
         </Card>
       )}

@@ -13,7 +13,10 @@ export function toHex(b: Bytes, sep = ''): string {
 }
 
 export function fromHex(h: string): Bytes {
-  const s = h.replace(/[^0-9a-fA-F]/g, '');
+  // séparateurs tolérés : espaces, deux-points, tirets ; tout autre caractère est une erreur
+  const s = h.replace(/[\s:-]/g, '');
+  const bad = s.match(/[^0-9a-fA-F]/);
+  if (bad) throw new Error(`Caractère non hexadécimal : « ${bad[0]} »`);
   if (s.length % 2) throw new Error('Hexadécimal de longueur impaire');
   const out = new Uint8Array(s.length / 2);
   for (let i = 0; i < out.length; i++) out[i] = parseInt(s.slice(2 * i, 2 * i + 2), 16);
@@ -89,6 +92,12 @@ export function modPow(b: bigint, e: bigint, m: bigint): bigint {
     e >>= 1n;
   }
   return r;
+}
+
+/** Abrège un texte long pour l'afficher en légende (le contenu complet reste dans les octets). */
+export function quote(s: string, max = 140): string {
+  const t = s.length > max ? `${s.slice(0, 100)} … ${s.slice(-20)} (${s.length} caractères)` : s;
+  return `« ${t} »`;
 }
 
 /** Copie avec un bit inversé à la position donnée (démonstration d'altération). */

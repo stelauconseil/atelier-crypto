@@ -251,3 +251,8 @@ label.f.fit { flex: 0 0 auto; min-width: 0; }
 [data-theme='dark'] .p-mid { background: #3a2a14; color: #f0b47a; }
 [data-theme='dark'] .p-pq { background: #2a2043; color: #c4b2f2; }
 [data-theme='dark'] .p-nt { background: #1e2a45; color: #a9c0f5; }
+
+/* textes longs sans espace (messages de test, hex collé) : jamais de débordement */
+.bv .cap, .status, .tip, .legend .lg, .bv-h h3, .meta, .formula, .adv p, .adv li, .tl-ev, .recall p, .recall li { overflow-wrap: anywhere; }
+.bv-h h3 { min-width: 0; }
+.legend .lg { max-width: 100%; }
