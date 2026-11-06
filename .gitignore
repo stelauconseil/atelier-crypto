@@ -5,7 +5,9 @@ dist-single
 *.log
 
 # secret Font Awesome (jeton) : ne jamais commiter
-.npmrc
 .preview
 test-results
 playwright-report
+# jeton Font Awesome en clair : ne jamais commiter
+.fa-token.local
+*.local

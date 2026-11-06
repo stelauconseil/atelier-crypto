@@ -6,6 +6,8 @@ des clairs, des chiffrés et des signatures, segment par segment.
 
 Benoit LEGER-DERVILLE · Stelau · iDAKTO
 
+**En ligne : <https://stelauconseil.github.io/atelier-crypto/>**
+
 ## Contenu
 
 | Famille | Algorithmes |
@@ -27,15 +29,30 @@ Pour chaque algorithme : une fiche de rappel (issue des planches), de vrais cham
   (déchiffré ensuite par WebCrypto, preuve d'interopérabilité), RSA-KEM, ECIES, HPKE mode Base
   (vérifié contre `@hpke/core`), SHA-256 en Merkle-Damgård explicite, ECDSA à nonce fixé.
 
+## Installation
+
+Les icônes viennent d'un **Kit Font Awesome Pro** (paquet npm privé `@awesome.me/kit-…`).
+Le fichier `.npmrc` du dépôt lit le jeton dans une variable d'environnement, jamais en clair :
+
+```bash
+export FONTAWESOME_PACKAGE_TOKEN=…   # dans ~/.zshrc ; jeton du Kit, compte Font Awesome Pro
+```
+
+Sans ce jeton, `npm install` échoue sur `@awesome.me/kit-…` : il faut un abonnement Pro
+ou remplacer `src/lib/icons.tsx` par des icônes libres (`@fortawesome/free-solid-svg-icons`).
+
 ## Commandes (Vite+)
 
 ```bash
 vp install          # dépendances
 vp dev              # serveur de développement
-vp test             # 30 tests : allers-retours, altérations, interopérabilité, attaques
+vp test             # 44 tests : allers-retours, altérations, interopérabilité, attaques
 vp build            # build statique dans dist/
 SINGLE=1 vp build   # un seul fichier HTML autonome dans dist-single/
+vp run test:e2e     # tests Playwright (script du package.json ; aussi : npm run test:e2e)
 ```
+
+`vp test` est la commande intégrée (Vitest) ; `vp run <script>` (ou `vpr <script>`) lance un script du `package.json`.
 
 ### Tests de robustesse de l'interface (Playwright)
 
@@ -46,7 +63,7 @@ chaque atelier affiche le bon verdict (⊥ après altération, JWS vérifié, or
 
 ```bash
 npx playwright install chromium   # une fois
-npm run test:e2e                  # build + vp preview, puis les 34 tests
+npm run test:e2e                  # build + vp preview, puis les 42 tests
 ATELIER_URL=file://$PWD/dist-single/index.html npm run test:e2e   # sur un build en fichier unique
 ```
 
@@ -73,3 +90,16 @@ sur les juxtapositions réelles de l'app (pire écart daltonien entre voisins Δ
 La couleur n'est jamais seule : légende nommée, espace entre segments, hachures (bourrage, masques),
 pointillés (octets de format). La page `#/palette` montre la palette en situation et permet de revenir
 à celle des planches PDF.
+
+## Publication
+
+À chaque `push` sur `main`, `.github/workflows/pages.yml` installe, lance les tests unitaires,
+construit, lance les tests Playwright puis publie `dist/` sur GitHub Pages. Les pull requests
+sont testées sans être publiées. Le jeton Font Awesome est fourni par le secret d'Actions
+`FONTAWESOME_PACKAGE_TOKEN`.
+
+## Licence
+
+Code sous licence [MIT](LICENSE). Les icônes Font Awesome Pro ne sont **pas** couvertes par cette
+licence : elles relèvent de la licence Font Awesome Pro de leur titulaire et ne sont pas incluses
+dans le dépôt (seulement dans le site construit).
