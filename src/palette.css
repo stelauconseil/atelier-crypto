@@ -2,14 +2,14 @@
  * Palette des octets : une couleur d'encre par famille de rôle.
  * « atelier » (par défaut) a été validée par calcul (OKLab, simulation protan/deutan/tritan)
  * sur les juxtapositions réelles de l'app : pire écart daltonien adjacent ΔE 7,3 (clair) / 9,8 (sombre),
- * pire écart en vision normale ΔE 15,7 / 16,8. Le codage secondaire (légende nommée, espace entre segments,
+ * pire écart en vision normale ΔE 15,1 / 17,8. Le codage secondaire (légende nommée, espace entre segments,
  * hachures pour bourrage et masques, pointillés pour les octets de format) couvre la zone 6–8.
  */
 :root,
 [data-palette='atelier'] {
   --c-secret: #9f1239;
   --c-pub: #115e59;
-  --c-rand: #a16207;
+  --c-rand: #4d7c0f;
   --c-pt: #1d4ed8;
   --c-ct: #1f2937;
   --c-tag: #e11d48;
@@ -24,7 +24,7 @@
 [data-theme='dark'][data-palette='atelier'] {
   --c-secret: #fda4af;
   --c-pub: #0d9488;
-  --c-rand: #eab308;
+  --c-rand: #a3e635;
   --c-pt: #6ea0ff;
   --c-ct: #d1d5db;
   --c-tag: #db2777;
