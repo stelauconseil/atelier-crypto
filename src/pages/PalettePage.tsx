@@ -1,3 +1,4 @@
+import { Fad, IC } from '../lib/icons';
 import { useMemo } from 'react';
 import { concat, fromHex, rand, utf8 } from '../lib/bytes';
 import { seg, type View } from '../crypto/types';
@@ -36,7 +37,7 @@ export function PalettePage() {
   }, []);
   return (
     <div className="page">
-      <div className="head"><div><div className="fam">Lisibilité</div><h1>Palette des octets</h1></div>
+      <div className="head"><div><div className="fam">Lisibilité</div><h1><Fad icon={IC.palette} className="h-ico" />Palette des octets</h1></div>
         <span className="segctl">
           <button className={palette === 'atelier' ? 'on' : ''} onClick={() => setPalette('atelier')}>atelier</button>
           <button className={palette === 'planches' ? 'on' : ''} onClick={() => setPalette('planches')}>planches PDF</button>

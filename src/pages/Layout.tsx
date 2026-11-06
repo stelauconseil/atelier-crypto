@@ -21,7 +21,7 @@ export function Layout() {
     <div className="app">
       <aside className="side">
         <Link to="/" className="brand">
-          <span className="logo">K</span>
+          <span className="logo"><Fad icon={IC.logo} /></span>
           <span><b>Atelier crypto</b><small>chiffrer · signer · voir les octets</small></span>
         </Link>
         <nav className="nav">

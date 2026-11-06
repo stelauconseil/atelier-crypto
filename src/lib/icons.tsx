@@ -10,6 +10,8 @@ import {
   faRepeat, faSaltShaker, faShieldCheck, faShuffle, faSignature, faSkullCrossbones, faStopwatch,
   faSun, faMoon, faSwatchbook, faTableCells, faTimeline, faTrees, faCube, faUserSecret, faDiceThree, faStar,
   faChevronUp, faChevronDown, faPaperPlane, faInbox, faLayerGroup, faFingerprint, faWandMagicSparkles,
+  faBinaryLock, faArrowLeft, faArrowRight, faGlobe, faCode, faBookOpenReader, faFlaskVial, faHandPointer, faEye,
+  faCalendarRange, faFilter, faFileCode, faGraduationCap,
 } from '@awesome.me/kit-c549591fa3/icons/duotone/solid';
 
 config.autoAddCss = false;
@@ -22,6 +24,9 @@ export const IC = {
   notions: faLightbulbOn, palette: faSwatchbook, sun: faSun, moon: faMoon, attack: faSkullCrossbones, forge: faUserSecret,
   star: faStar, more: faChevronDown, less: faChevronUp, send: faPaperPlane, receive: faInbox, sym: faLock, pke: faKeySkeleton,
   sigFamily: faSignature, layers: faLayerGroup, fingerprint: faFingerprint, magic: faWandMagicSparkles,
+  logo: faBinaryLock, prev: faArrowLeft, next: faArrowRight, public: faGlobe, private: faUserSecret, code: faCode,
+  deeper: faBookOpenReader, lab: faFlaskVial, pointer: faHandPointer, eye: faEye, period: faCalendarRange,
+  filter: faFilter, file: faFileCode, learn: faGraduationCap,
 } satisfies Record<string, IconDefinition>;
 
 /** Une icône par algorithme : clin d'œil à ce qui le caractérise. */

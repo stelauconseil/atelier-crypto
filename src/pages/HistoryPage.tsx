@@ -1,3 +1,5 @@
+import { ALGO_ICON, Fad, IC } from '../lib/icons';
+const LANE_ICON = { sym: IC.sym, rsa: ALGO_ICON['rsa-textbook'], ec: ALGO_ICON.ecies, sig: IC.sigFamily, pq: ALGO_ICON.mlkem } as const;
 import { Link } from '@tanstack/react-router';
 import { useLayoutEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
@@ -25,18 +27,18 @@ export function HistoryPage() {
   const inEra = (y: number) => era === null || (y >= ERAS[era].from && y <= ERAS[era].to);
   return (
     <div className="page" ref={ref}>
-      <div className="head"><div><div className="fam">Histoire</div><h1>Cinquante ans de chiffrement et de signature</h1></div></div>
+      <div className="head"><div><div className="fam">Histoire</div><h1><Fad icon={IC.history} className="h-ico" />Cinquante ans de chiffrement et de signature</h1></div></div>
       <div className="filters">
         {LANES.map((l) => <button key={l.id} className={lanes.includes(l.id) ? 'on' : ''} onClick={() => toggle(l.id)}>{l.label}</button>)}
       </div>
       <div className="filters">
-        <button className={era === null ? 'on' : ''} onClick={() => setEra(null)}>Toutes les périodes</button>
+        <button className={era === null ? 'on' : ''} onClick={() => setEra(null)}><Fad icon={IC.period} /> Toutes les périodes</button>
         {ERAS.map((e, i) => <button key={i} className={era === i ? 'on' : ''} onClick={() => setEra(i)}>{e.label}</button>)}
       </div>
       <div className="tl">
         {LANES.filter((l) => lanes.includes(l.id)).map((l) => (
           <div className="tl-lane" key={l.id}>
-            <div className="ln" style={{ background: l.color }}>{l.label}</div>
+            <div className="ln" style={{ background: l.color }}><Fad icon={LANE_ICON[l.id]} />{l.label}</div>
             <div className="tl-evs">
               {EVENTS.filter((e) => e.lane === l.id && inEra(e.year)).sort((a, b) => a.year - b.year).map((e, i) => {
                 const body = (<><b>{e.year}</b>{e.title}<span className="d">{e.detail}</span></>);

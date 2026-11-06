@@ -68,12 +68,12 @@ function Birthday() {
       {func.length > 0 && (
         <div className="grid2" style={{ marginTop: 10 }}>
           <div>
-            <div className="who">Permutation : 40 premières valeurs</div>
+            <div className="who"><Fad icon={IC.layers} />Permutation : 40 premières valeurs</div>
             <div className="bytes">{perm.slice(0, 40).map((v, i) => cell(v, i, false))}</div>
             <Status s={{ kind: 'ok', text: 'Aucune répétition, jamais.' }} />
           </div>
           <div>
-            <div className="who">Fonction aléatoire : 40 premières valeurs</div>
+            <div className="who"><Fad icon={IC.dice} />Fonction aléatoire : 40 premières valeurs</div>
             <div className="bytes">{func.slice(0, 40).map((v, i) => cell(v, i, cf >= 0 && i <= cf && v === func[cf]))}</div>
             <Status s={{ kind: 'ko', text: `Première répétition au tirage n° ${cf + 1}. Moyenne sur ${stats.length} essai(s) : ${(stats.reduce((a, b) => a + b + 1, 0) / stats.length).toFixed(1)}.` }} />
           </div>
@@ -101,7 +101,7 @@ const GLOSSARY: [string, string][] = [
 export function NotionsPage() {
   return (
     <div className="page">
-      <div className="head"><div><div className="fam">Notions</div><h1>Comprendre ce qu'on manipule</h1></div></div>
+      <div className="head"><div><div className="fam">Notions</div><h1><Fad icon={IC.notions} className="h-ico" />Comprendre ce qu'on manipule</h1></div></div>
       <LengthExtension />
       <Birthday />
       <Card n={3} title="Glossaire">

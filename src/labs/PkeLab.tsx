@@ -75,8 +75,8 @@ export function PkeLab({ id }: { id: string }) {
     <>
       <Card n={2} title="Destinataire : sa biclé" right={<span className="ctrls"><EncodingToggle value={enc} onChange={setEnc} /><button className="btn b-ghost b-sm" disabled={!!busy} onClick={keygen}><Fad icon={IC.keypair} />{busy === 'keygen' ? 'Génération…' : 'Nouvelle biclé'}</button></span>}>
         <div className="grid2">
-          <div><div className="who" style={{ color: 'var(--green)' }}>Clé publique, diffusée</div><FormatTabs views={pub} encoding={enc} /></div>
-          <div><div className="who" style={{ color: 'var(--red)' }}>Clé privée, gardée secrète</div><FormatTabs views={priv} encoding={enc} /></div>
+          <div><div className="who" style={{ color: 'var(--c-pub)' }}><Fad icon={IC.public} />Clé publique, diffusée</div><FormatTabs views={pub} encoding={enc} /></div>
+          <div><div className="who" style={{ color: 'var(--c-secret)' }}><Fad icon={IC.private} />Clé privée, gardée secrète</div><FormatTabs views={priv} encoding={enc} /></div>
         </div>
       </Card>
 

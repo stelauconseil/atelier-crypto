@@ -1,4 +1,4 @@
-import { ALGO_ICON, Fad, IC } from '../lib/icons';
+import { ALGO_ICON, Fad, IC, Num } from '../lib/icons';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
@@ -71,7 +71,7 @@ export function HomePage() {
         </p>
       </div>
       <div className="card">
-        <h2><Fad icon={IC.star} className="num" />L'idée-force : tout chiffrement réel est hybride (KEM / DEM)</h2>
+        <h2><Num n={1} />L'idée-force : tout chiffrement réel est hybride (KEM / DEM)</h2>
         <HybridDiagram />
       </div>
       <div className="grid3" style={{ marginTop: 14 }}>
@@ -92,12 +92,13 @@ export function HomePage() {
         <Link to="/notions" className="card famcard"><h3><Fad icon={IC.notions} className="ico-l" />Notions →</h3><div className="meta">MAC contre hachage avec l'attaque par extension de longueur en direct, paradoxe des anniversaires, glossaire.</div></Link>
       </div>
       <div className="card" style={{ marginTop: 14 }}>
-        <h2>Mode d'emploi</h2>
-        <ul style={{ margin: 0, paddingLeft: 18 }}>
-          <li>Les couleurs sont constantes : <span className="pill t-key">secret</span><span className="pill t-pub">public</span><span className="pill t-nonce">aléa</span><span className="pill t-pt">clair</span><span className="pill t-ct">chiffré</span><span className="pill t-tag">tag</span><span className="pill t-enc">encapsulation</span><span className="pill t-sig">signature</span><span className="pill t-hash">haché</span><span className="pill t-pad">bourrage</span><span className="pill t-hdr">format</span> (détail sur la page Palette).</li>
-          <li>Survolez un segment pour son rôle et sa taille ; basculez hex / base64 ; cliquez « … octets masqués » pour tout afficher.</li>
-          <li>« Altérer un bit » modifie ce qui circule : observez qui détecte (AEAD, signatures) et qui ne voit rien (CBC, CTR, RSA brut).</li>
-          <li>Rechiffrez ou resignez le même message : l'atelier dit si le schéma est déterministe ou probabiliste.</li>
+        <h2><Num n={2} />Mode d'emploi</h2>
+        <ul className="howto">
+          <li><Fad icon={IC.palette} /><span>Les couleurs sont constantes : <span className="pill t-key">secret</span><span className="pill t-pub">public</span><span className="pill t-nonce">aléa</span><span className="pill t-pt">clair</span><span className="pill t-ct">chiffré</span><span className="pill t-tag">tag</span><span className="pill t-enc">encapsulation</span><span className="pill t-sig">signature</span><span className="pill t-hash">haché</span><span className="pill t-pad">bourrage</span><span className="pill t-hdr">format</span> (détail sur la page Palette).</span></li>
+          <li><Fad icon={IC.pointer} /><span>Survolez un segment pour son rôle et sa taille ; basculez hex / base64 ; cliquez « afficher les octets masqués » pour tout voir, puis « replier ».</span></li>
+          <li><Fad icon={IC.bolt} /><span>« Altérer un bit » modifie ce qui circule : observez qui détecte (AEAD, signatures) et qui ne voit rien (CBC, CTR, RSA brut).</span></li>
+          <li><Fad icon={IC.dice} /><span>Rechiffrez ou resignez le même message : l'atelier dit si le schéma est déterministe ou probabiliste.</span></li>
+          <li><Fad icon={IC.code} /><span>Sur chaque algorithme, l'onglet « Pour aller plus loin » détaille chaque élément affiché, et l'onglet « Le code » montre le code TypeScript réellement exécuté.</span></li>
         </ul>
       </div>
     </div>
