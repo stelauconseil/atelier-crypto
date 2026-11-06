@@ -1,3 +1,4 @@
+import { Fad, IC } from '../lib/icons';
 import { useState } from 'react';
 import { equal, rand, toHex, utf8 } from '../lib/bytes';
 import { hmacSha256, lengthExtend, naiveMac } from '../crypto/mac';
@@ -26,7 +27,7 @@ function LengthExtension() {
       <div className="row">
         <label className="f"><span className="lab">Message légitime M</span><input className="t mono" value={m} onChange={(e) => setM(e.target.value)} /></label>
         <label className="f"><span className="lab">Suite ajoutée par l'attaquant</span><input className="t mono" value={suffix} onChange={(e) => setSuffix(e.target.value)} /></label>
-        <button className="btn b-org" onClick={run}>Forger sans la clé</button>
+        <button className="btn b-org" onClick={run}><Fad icon={IC.forge} />Forger sans la clé</button>
       </div>
       {out && (
         <>
@@ -63,7 +64,7 @@ function Birthday() {
         Un flux produit par une <b>permutation</b> (comme AES-CTR) ne répète jamais une valeur avant d'avoir épuisé les 2ⁿ possibles. Un flux vraiment aléatoire en répète une après
         environ √(π·2ⁿ/2) tirages : ≈ 20 pour 8 bits, ≈ 2³² pour un bloc de 64 bits (Sweet32), ≈ 2⁶⁴ pour AES. C'est l'origine des limites de volume par clé.
       </p>
-      <button className="btn b-pri" onClick={run}>Tirer 256 valeurs de chaque</button>
+      <button className="btn b-pri" onClick={run}><Fad icon={IC.dice} />Tirer 256 valeurs de chaque</button>
       {func.length > 0 && (
         <div className="grid2" style={{ marginTop: 10 }}>
           <div>

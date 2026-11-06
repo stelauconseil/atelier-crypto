@@ -1,3 +1,4 @@
+import { ALGO_ICON, Fad, IC } from '../lib/icons';
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { ALGOS, FAMILIES } from '../data/algos';
@@ -24,10 +25,10 @@ export function Layout() {
           <span><b>Atelier crypto</b><small>chiffrer · signer · voir les octets</small></span>
         </Link>
         <nav className="nav">
-          <Link to="/" activeOptions={{ exact: true }} activeProps={{ className: 'active' }}>Accueil</Link>
-          <Link to="/histoire" activeProps={{ className: 'active' }}>Histoire en frise</Link>
-          <Link to="/notions" activeProps={{ className: 'active' }}>Notions : MAC, anniversaires…</Link>
-          <Link to="/palette" activeProps={{ className: 'active' }}>Palette des octets</Link>
+          <Link to="/" activeOptions={{ exact: true }} activeProps={{ className: 'active' }}><span><Fad icon={IC.home} />Accueil</span></Link>
+          <Link to="/histoire" activeProps={{ className: 'active' }}><span><Fad icon={IC.history} />Histoire en frise</span></Link>
+          <Link to="/notions" activeProps={{ className: 'active' }}><span><Fad icon={IC.notions} />Notions : MAC, anniversaires…</span></Link>
+          <Link to="/palette" activeProps={{ className: 'active' }}><span><Fad icon={IC.palette} />Palette des octets</span></Link>
         </nav>
         {FAMILIES.map((f) => (
           <div className="nav-sec" key={f.id}>
@@ -35,7 +36,7 @@ export function Layout() {
             <nav className="nav">
               {ALGOS.filter((a) => a.family === f.id).map((a) => (
                 <Link key={a.id} to="/algo/$id" params={{ id: a.id }} activeProps={{ className: 'active' }}>
-                  <span>{a.short}</span>
+                  <span><Fad icon={ALGO_ICON[a.id]} />{a.short}</span>
                   <span className="yr">{a.year.slice(0, 4)}</span>
                 </Link>
               ))}
@@ -46,10 +47,10 @@ export function Layout() {
           Introduction à la cryptographie moderne
           <br />Benoit LEGER-DERVILLE · Stelau · iDAKTO
           <button className="theme-btn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-            {theme === 'dark' ? '☀ Thème clair' : '☾ Thème sombre'}
+            <Fad icon={theme === 'dark' ? IC.sun : IC.moon} />{theme === 'dark' ? 'Thème clair' : 'Thème sombre'}
           </button>
           <button className="theme-btn" onClick={() => setPalette(palette === 'atelier' ? 'planches' : 'atelier')}>
-            Palette : {palette === 'atelier' ? 'atelier' : 'planches PDF'}
+            <Fad icon={IC.palette} />Palette : {palette === 'atelier' ? 'atelier' : 'planches PDF'}
           </button>
         </div>
       </aside>

@@ -1,3 +1,4 @@
+import { Fad, IC } from '../lib/icons';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { concat, toB64, toHex, type Bytes } from '../lib/bytes';
@@ -21,7 +22,7 @@ function SegBytes({ s, full, onToggle }: { s: Seg; full: boolean; onToggle: () =
       {!long ? render(b) : full ? (
         <>
           {render(b)}
-          <button className="fold" onClick={onToggle}>▲ replier</button>
+          <button className="fold" onClick={onToggle}><Fad icon={IC.less} /> replier</button>
         </>
       ) : (
         <>
@@ -64,7 +65,7 @@ function Blocks({ segs, block, repeats }: { segs: Seg[]; block: number; repeats?
           </span>
         ),
       )}
-      {all_ && blocks.length > 24 && <button className="fold" onClick={() => setAll(false)}>▲ replier</button>}
+      {all_ && blocks.length > 24 && <button className="fold" onClick={() => setAll(false)}><Fad icon={IC.less} /> replier</button>}
     </>
   );
 }

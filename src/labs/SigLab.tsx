@@ -1,3 +1,4 @@
+import { Fad, IC } from '../lib/icons';
 import { useEffect, useState } from 'react';
 import { concat, i2osp, os2ip, toHex, utf8 } from '../lib/bytes';
 import { SIG, ecdsaWithK, recoverFromReusedK } from '../crypto/sig';
@@ -68,7 +69,7 @@ export function SigLab({ id }: { id: string }) {
       <Card n={2} title="Signataire : sa biclé" right={<span className="ctrls">
         {A.variants && <select className="t" value={variant} onChange={(e) => setVariant(e.target.value)}>{A.variants.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}</select>}
         <EncodingToggle value={enc} onChange={setEnc} />
-        <button className="btn b-ghost b-sm" disabled={!!busy} onClick={keygen}>{busy === 'keygen' ? 'Génération…' : 'Nouvelle biclé'}</button></span>}>
+        <button className="btn b-ghost b-sm" disabled={!!busy} onClick={keygen}><Fad icon={IC.keypair} />{busy === 'keygen' ? 'Génération…' : 'Nouvelle biclé'}</button></span>}>
         <div className="grid2">
           <div><div className="who" style={{ color: 'var(--red)' }}>Clé privée : signe</div><FormatTabs views={priv} encoding={enc} /></div>
           <div><div className="who" style={{ color: 'var(--green)' }}>Clé publique : vérifie</div><FormatTabs views={pub} encoding={enc} /></div>
@@ -82,14 +83,14 @@ export function SigLab({ id }: { id: string }) {
           <textarea className="t" value={msg} onChange={(e) => setMsg(e.target.value)} />
         </label>
         <div className="actions">
-          <button className="btn b-pri" disabled={!keys || !!busy} onClick={sign}>{busy === 'sign' ? 'Signature…' : '✍ Signer'}</button>
+          <button className="btn b-pri" disabled={!keys || !!busy} onClick={sign}><Fad icon={IC.sign} />{busy === 'sign' ? 'Signature…' : 'Signer'}</button>
         </div>
         <Status s={st} />
         {inside.map((v, i) => <ByteView key={i} view={v} encoding={enc} />)}
       </Card>
 
       {sig && (
-        <Card n={4} title="Transmis : le message et sa signature" right={<button className="btn b-red b-sm" onClick={() => { const t = tamper(sig, ['sig', 'hash', 'salt']); setSig(t.segs); setSt2({ kind: 'info', text: `Un bit inversé dans la signature : ${t.where}.` }); }}>⚡ Altérer la signature</button>}>
+        <Card n={4} title="Transmis : le message et sa signature" right={<button className="btn b-red b-sm" onClick={() => { const t = tamper(sig, ['sig', 'hash', 'salt']); setSig(t.segs); setSt2({ kind: 'info', text: `Un bit inversé dans la signature : ${t.where}.` }); }}><Fad icon={IC.bolt} />Altérer la signature</button>}>
           <ByteView view={{ title: 'Message', caption: `« ${msg} »`, segs: [seg('M', utf8(msg), 'pt')] }} encoding={enc} />
           <ByteView view={{ title: 'Signature σ', segs: sig }} encoding={enc} />
         </Card>
@@ -98,7 +99,7 @@ export function SigLab({ id }: { id: string }) {
       {sig && (
         <Card n={5} title="Vérifier avec la clé publique">
           <Pipeline label="Vérifier" steps={A.pipelineVerify} run={runV} />
-          <div className="actions"><button className="btn b-teal" disabled={!!busy} onClick={verify}>✔ Vérifier</button></div>
+          <div className="actions"><button className="btn b-teal" disabled={!!busy} onClick={verify}><Fad icon={IC.verify} />Vérifier</button></div>
           <Status s={st2} />
           {vInside.map((v, i) => <ByteView key={i} view={v} encoding={enc} />)}
         </Card>
@@ -130,7 +131,7 @@ function NonceReuse() {
       <div className="row">
         <label className="f"><span className="lab">Message 1</span><input className="t" value={m1} onChange={(e) => setM1(e.target.value)} /></label>
         <label className="f"><span className="lab">Message 2</span><input className="t" value={m2} onChange={(e) => setM2(e.target.value)} /></label>
-        <button className="btn b-org" onClick={run}>Signer deux fois avec le même k, puis attaquer</button>
+        <button className="btn b-org" onClick={run}><Fad icon={IC.attack} />Signer deux fois avec le même k, puis attaquer</button>
       </div>
       {out && (
         <>

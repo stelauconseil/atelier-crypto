@@ -45,8 +45,8 @@ export function PalettePage() {
       <Card n={1} title="Douze familles de rôles, une encre chacune">
         <p style={{ margin: '0 0 10px' }}>
           Chaque segment d'octets porte l'encre de son rôle, sur un fond teinté de la même couleur. La palette « atelier » a été choisie par calcul
-          sur les juxtapositions réelles de l'app (nonce ‖ C ‖ tag, 00 02 ‖ PS, ŝ ‖ ek…) : écart minimal entre voisins ΔE 7,3 en clair et 6,3 en sombre
-          sous simulation protanopie, deutéranopie et tritanopie, et ΔE ≥ 16,9 en vision normale. La couleur n'est jamais seule : chaque segment est nommé dans
+          sur les juxtapositions réelles de l'app (nonce ‖ C ‖ tag, 00 02 ‖ PS, ŝ ‖ ek…) : écart minimal entre voisins ΔE 7,3 en clair et 9,8 en sombre
+          sous simulation protanopie, deutéranopie et tritanopie, et ΔE ≥ 15,7 en vision normale. La couleur n'est jamais seule : chaque segment est nommé dans
           la légende, séparé par un espace, et le bourrage est hachuré, les octets de format en pointillés.
         </p>
         <div className="grid3">

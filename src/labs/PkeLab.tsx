@@ -1,3 +1,4 @@
+import { Fad, IC } from '../lib/icons';
 import { useEffect, useState } from 'react';
 import { concat, fromUtf8, toHex, utf8 } from '../lib/bytes';
 import { PKE } from '../crypto/pke';
@@ -72,7 +73,7 @@ export function PkeLab({ id }: { id: string }) {
 
   return (
     <>
-      <Card n={2} title="Destinataire : sa biclé" right={<span className="ctrls"><EncodingToggle value={enc} onChange={setEnc} /><button className="btn b-ghost b-sm" disabled={!!busy} onClick={keygen}>{busy === 'keygen' ? 'Génération…' : 'Nouvelle biclé'}</button></span>}>
+      <Card n={2} title="Destinataire : sa biclé" right={<span className="ctrls"><EncodingToggle value={enc} onChange={setEnc} /><button className="btn b-ghost b-sm" disabled={!!busy} onClick={keygen}><Fad icon={IC.keypair} />{busy === 'keygen' ? 'Génération…' : 'Nouvelle biclé'}</button></span>}>
         <div className="grid2">
           <div><div className="who" style={{ color: 'var(--green)' }}>Clé publique, diffusée</div><FormatTabs views={pub} encoding={enc} /></div>
           <div><div className="who" style={{ color: 'var(--red)' }}>Clé privée, gardée secrète</div><FormatTabs views={priv} encoding={enc} /></div>
@@ -85,13 +86,13 @@ export function PkeLab({ id }: { id: string }) {
           <span className="lab"><span>Clair (UTF-8)</span><span>{utf8(pt).length} octets{max !== undefined ? ` · ${max} au plus` : ''}</span></span>
           <textarea className="t" value={pt} onChange={(e) => setPt(e.target.value)} />
         </label>
-        <div className="actions"><button className="btn b-pri" disabled={!keys || !!busy} onClick={encrypt}>🔒 Chiffrer pour le destinataire</button></div>
+        <div className="actions"><button className="btn b-pri" disabled={!keys || !!busy} onClick={encrypt}><Fad icon={IC.lock} />Chiffrer pour le destinataire</button></div>
         <Status s={st} />
         {inside.map((v, i) => <ByteView key={i} view={v} encoding={enc} />)}
       </Card>
 
       {wire && (
-        <Card n={4} title="Message transmis : un seul envoi" right={<button className="btn b-red b-sm" onClick={() => { const t = tamper(wire); setWire(t.segs); setSt2({ kind: 'info', text: `Un bit inversé : ${t.where}.` }); }}>⚡ Altérer un bit</button>}>
+        <Card n={4} title="Message transmis : un seul envoi" right={<button className="btn b-red b-sm" onClick={() => { const t = tamper(wire); setWire(t.segs); setSt2({ kind: 'info', text: `Un bit inversé : ${t.where}.` }); }}><Fad icon={IC.bolt} />Altérer un bit</button>}>
           <ByteView view={{ title: 'Ce qui circule', caption: 'La clé de session n\'est jamais transmise : seul ce qui permet au destinataire de la recalculer circule.', segs: wire }} encoding={enc} />
         </Card>
       )}
@@ -99,7 +100,7 @@ export function PkeLab({ id }: { id: string }) {
       {wire && (
         <Card n={5} title="Destinataire : déchiffrer avec la clé privée">
           <Pipeline label="Déchiffrer" steps={A.pipelineDec} run={runD} />
-          <div className="actions"><button className="btn b-teal" disabled={!!busy} onClick={decrypt}>🔓 Déchiffrer</button></div>
+          <div className="actions"><button className="btn b-teal" disabled={!!busy} onClick={decrypt}><Fad icon={IC.unlock} />Déchiffrer</button></div>
           <Status s={st2} />
           {result !== null && <ByteView view={{ title: 'Clair obtenu', caption: `« ${result} »`, segs: [seg('Clair', utf8(result), 'pt')] }} encoding={enc} />}
           {outInside.map((v, i) => <ByteView key={i} view={v} encoding={enc} />)}

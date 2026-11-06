@@ -1,3 +1,4 @@
+import { Fad, IC, Num } from '../lib/icons';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import gsap from 'gsap';
 import { ByteView, type Encoding } from './ByteView';
@@ -42,7 +43,7 @@ export function Status({ s }: { s: { kind: 'ok' | 'ko' | 'info'; text: string } 
   if (!s) return null;
   return (
     <div ref={ref} className={`status s-${s.kind}`}>
-      <span>{s.kind === 'ok' ? '✓' : s.kind === 'ko' ? '✕' : 'ℹ'}</span>
+      <Fad icon={s.kind === 'ok' ? IC.ok : s.kind === 'ko' ? IC.ko : IC.info} />
       <span>{s.text}</span>
     </div>
   );
@@ -61,7 +62,7 @@ export function Pills({ a }: { a: AlgoInfo }) {
 export function Recall({ a }: { a: AlgoInfo }) {
   return (
     <div className="card">
-      <h2><span className="n">1</span>Rappel</h2>
+      <h2><Num n={1} />Rappel</h2>
       <div className="recall">
         <div>
           <p>{a.lead}</p>
@@ -101,7 +102,7 @@ export function Card({ n, title, right, children }: { n?: number; title: string;
   return (
     <div className="card">
       <div className="split" style={{ marginBottom: 6 }}>
-        <h2 style={{ margin: 0 }}>{n !== undefined && <span className="n">{n}</span>}{title}</h2>
+        <h2 style={{ margin: 0 }}>{n !== undefined && <Num n={n} />}{title}</h2>
         {right}
       </div>
       {children}

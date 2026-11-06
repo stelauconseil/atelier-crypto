@@ -1,3 +1,4 @@
+import { ALGO_ICON, Fad, IC } from '../lib/icons';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
@@ -70,32 +71,32 @@ export function HomePage() {
         </p>
       </div>
       <div className="card">
-        <h2><span className="n">★</span>L'idée-force : tout chiffrement réel est hybride (KEM / DEM)</h2>
+        <h2><Fad icon={IC.star} className="num" />L'idée-force : tout chiffrement réel est hybride (KEM / DEM)</h2>
         <HybridDiagram />
       </div>
       <div className="grid3" style={{ marginTop: 14 }}>
         {FAMILIES.map((f) => (
           <div className="card famcard" key={f.id}>
-            <h3>{f.label}</h3>
+            <h3><Fad icon={f.id === 'sym' ? IC.sym : f.id === 'pke' ? IC.pke : IC.sigFamily} className="ico-l" />{f.label}</h3>
             <div className="meta" style={{ marginTop: 0 }}>{f.sub}</div>
             <div className="chips">
               {ALGOS.filter((a) => a.family === f.id).map((a) => (
-                <Link key={a.id} className="chip" to="/algo/$id" params={{ id: a.id }}>{a.short}</Link>
+                <Link key={a.id} className="chip" to="/algo/$id" params={{ id: a.id }}><Fad icon={ALGO_ICON[a.id]} />{a.short}</Link>
               ))}
             </div>
           </div>
         ))}
       </div>
       <div className="grid2" style={{ marginTop: 14 }}>
-        <Link to="/histoire" className="card famcard"><h3>Histoire en frise →</h3><div className="meta">De DES et RSA à ML-KEM : jalons, attaques (Bleichenbacher, PS3, Sweet32…) et normes.</div></Link>
-        <Link to="/notions" className="card famcard"><h3>Notions →</h3><div className="meta">MAC contre hachage avec l'attaque par extension de longueur en direct, paradoxe des anniversaires, glossaire.</div></Link>
+        <Link to="/histoire" className="card famcard"><h3><Fad icon={IC.history} className="ico-l" />Histoire en frise →</h3><div className="meta">De DES et RSA à ML-KEM : jalons, attaques (Bleichenbacher, PS3, Sweet32…) et normes.</div></Link>
+        <Link to="/notions" className="card famcard"><h3><Fad icon={IC.notions} className="ico-l" />Notions →</h3><div className="meta">MAC contre hachage avec l'attaque par extension de longueur en direct, paradoxe des anniversaires, glossaire.</div></Link>
       </div>
       <div className="card" style={{ marginTop: 14 }}>
         <h2>Mode d'emploi</h2>
         <ul style={{ margin: 0, paddingLeft: 18 }}>
           <li>Les couleurs sont constantes : <span className="pill t-key">secret</span><span className="pill t-pub">public</span><span className="pill t-nonce">aléa</span><span className="pill t-pt">clair</span><span className="pill t-ct">chiffré</span><span className="pill t-tag">tag</span><span className="pill t-enc">encapsulation</span><span className="pill t-sig">signature</span><span className="pill t-hash">haché</span><span className="pill t-pad">bourrage</span><span className="pill t-hdr">format</span> (détail sur la page Palette).</li>
           <li>Survolez un segment pour son rôle et sa taille ; basculez hex / base64 ; cliquez « … octets masqués » pour tout afficher.</li>
-          <li>« ⚡ Altérer un bit » modifie ce qui circule : observez qui détecte (AEAD, signatures) et qui ne voit rien (CBC, CTR, RSA brut).</li>
+          <li>« Altérer un bit » modifie ce qui circule : observez qui détecte (AEAD, signatures) et qui ne voit rien (CBC, CTR, RSA brut).</li>
           <li>Rechiffrez ou resignez le même message : l'atelier dit si le schéma est déterministe ou probabiliste.</li>
         </ul>
       </div>

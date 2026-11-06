@@ -1,3 +1,4 @@
+import { Fad, IC } from '../lib/icons';
 import { useMemo, useState } from 'react';
 import { concat, fromHex, fromUtf8, rand, toHex, utf8 } from '../lib/bytes';
 import { SYM } from '../crypto/sym';
@@ -92,7 +93,7 @@ export function SymLab({ id, defaultText }: { id: string; defaultText?: string }
             <span className="lab"><span>{A.hexPlaintext ? 'KEK' : 'Clé K'} ({(keyBytes?.length ?? 0) * 8} bits, hex, secrète)</span></span>
             <input className="t mono" value={keyHex} onChange={(e) => setKeyHex(e.target.value)} />
           </label>
-          <button className="btn b-ghost" onClick={() => newKey()}>Nouvelle clé</button>
+          <button className="btn b-ghost" onClick={() => newKey()}><Fad icon={IC.key} />Nouvelle clé</button>
         </div>
         {A.nonceLen > 0 && (
           <div className="row" style={{ marginTop: 8 }}>
@@ -100,7 +101,7 @@ export function SymLab({ id, defaultText }: { id: string; defaultText?: string }
               <span className="lab"><span>{A.nonceName} · {A.nonceLen} octets, hex, public</span></span>
               <input className="t mono" value={nonceHex} onChange={(e) => setNonceHex(e.target.value)} />
             </label>
-            <button className="btn b-ghost" onClick={newNonce}>Nouveau nonce</button>
+            <button className="btn b-ghost" onClick={newNonce}><Fad icon={IC.dice} />Nouveau nonce</button>
           </div>
         )}
         {A.aead && (
@@ -114,8 +115,8 @@ export function SymLab({ id, defaultText }: { id: string; defaultText?: string }
           <textarea className={`t ${A.hexPlaintext ? 'mono' : ''}`} value={pt} onChange={(e) => setPt(e.target.value)} />
         </label>
         <div className="actions">
-          <button className="btn b-pri" onClick={encrypt}>🔒 Chiffrer</button>
-          {A.hexPlaintext && <button className="btn b-ghost" onClick={() => setPt(toHex(rand(32)))}>Nouvelle clé à envelopper</button>}
+          <button className="btn b-pri" onClick={encrypt}><Fad icon={IC.lock} />Chiffrer</button>
+          {A.hexPlaintext && <button className="btn b-ghost" onClick={() => setPt(toHex(rand(32)))}><Fad icon={IC.dice} />Nouvelle clé à envelopper</button>}
         </div>
         <Status s={st} />
         {keyBytes && <ByteView view={{ title: 'La clé, telle qu\'elle est en mémoire', segs: [seg(A.hexPlaintext ? 'KEK' : 'K', keyBytes, 'key')] }} encoding={enc} />}
@@ -123,7 +124,7 @@ export function SymLab({ id, defaultText }: { id: string; defaultText?: string }
       </Card>
 
       {wire && (
-        <Card n={3} title="Message transmis : un seul envoi" right={<button className="btn b-red b-sm" onClick={alter}>⚡ Altérer un bit</button>}>
+        <Card n={3} title="Message transmis : un seul envoi" right={<button className="btn b-red b-sm" onClick={alter}><Fad icon={IC.bolt} />Altérer un bit</button>}>
           <ByteView view={{ title: 'Ce qui circule sur le réseau', caption: A.aead ? 'Les AAD voyagent à part, en clair ; elles sont couvertes par le tag.' : 'Sans tag : rien ne permet de détecter une modification.', segs: wire }} encoding={enc} />
         </Card>
       )}
@@ -131,7 +132,7 @@ export function SymLab({ id, defaultText }: { id: string; defaultText?: string }
       {wire && (
         <Card n={4} title="Destinataire : même clé K">
           <Pipeline label="Déchiffrer" steps={A.pipelineDec} run={runD} />
-          <div className="actions"><button className="btn b-teal" onClick={decrypt}>🔓 Déchiffrer</button></div>
+          <div className="actions"><button className="btn b-teal" onClick={decrypt}><Fad icon={IC.unlock} />Déchiffrer</button></div>
           <Status s={st2} />
           {result !== null && <ByteView view={{ title: 'Clair obtenu', segs: [seg('Clair', A.hexPlaintext ? fromHex(result) : utf8(result), 'pt')], caption: A.hexPlaintext ? undefined : `« ${result} »` }} encoding={enc} />}
           {outInside.map((v, i) => <ByteView key={i} view={v} encoding={enc} />)}

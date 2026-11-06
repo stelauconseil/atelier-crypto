@@ -3,3 +3,7 @@ dist
 dist-single
 .DS_Store
 *.log
+
+# secret Font Awesome (jeton) : ne jamais commiter
+.npmrc
+.preview

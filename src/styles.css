@@ -201,3 +201,19 @@ label.f.fit { flex: 0 0 auto; min-width: 0; }
 .bytes .gap, .bytes .fold { color: var(--mute); font-style: italic; font-family: var(--sans); font-size: 11.5px; padding: 0 6px; cursor: pointer; text-decoration: underline dotted; background: none; border: none; }
 .bytes .fold { display: inline; }
 .grid2 > .card + .card, .grid3 > .card + .card { margin-top: 0; }
+
+/* ---------- icônes Font Awesome Duotone */
+.fad-i { --fa-primary-color: currentColor; --fa-secondary-color: currentColor; --fa-secondary-opacity: 0.38; }
+.num { font-size: 22px; flex: none; --fa-primary-color: #fff; --fa-secondary-color: var(--orange); --fa-secondary-opacity: 1; }
+[data-theme='dark'] .num { --fa-primary-color: var(--panel); }
+.nav a > span { display: inline-flex; align-items: center; gap: 9px; }
+.nav a .fad-i { width: 17px; color: #7fd1cf; --fa-secondary-color: #f0a86d; --fa-secondary-opacity: 0.85; }
+.nav a.active .fad-i { color: #fff; --fa-secondary-color: var(--orange); }
+.btn .fad-i { --fa-secondary-opacity: 0.45; }
+.b-pri .fad-i, .b-teal .fad-i, .b-org .fad-i { --fa-secondary-color: #ffd7b5; --fa-secondary-opacity: 0.9; }
+.status .fad-i { font-size: 15px; align-self: center; }
+.chip { display: inline-flex; align-items: center; gap: 6px; }
+.chip .fad-i { color: var(--teal); --fa-secondary-color: var(--orange); --fa-secondary-opacity: 0.7; }
+.ico-l { margin-right: 8px; color: var(--teal); --fa-secondary-color: var(--orange); --fa-secondary-opacity: 0.75; }
+.theme-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.fold .fad-i { font-size: 10px; }
