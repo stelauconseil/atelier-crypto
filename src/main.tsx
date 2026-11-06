@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { RouterProvider, createHashHistory, createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
+import { RouterProvider, createHashHistory, createMemoryHistory, createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
 import './styles.css';
 import { Layout } from './pages/Layout';
 import { HomePage } from './pages/HomePage';
@@ -16,8 +16,10 @@ const routes = [
   createRoute({ getParentRoute: () => root, path: '/notions', component: NotionsPage }),
 ];
 
-// Historique par fragment (#/…) : l'app fonctionne aussi en fichier unique, hébergée n'importe où.
-const router = createRouter({ routeTree: root.addChildren(routes), history: createHashHistory() });
+// Historique par fragment (#/…) : l'app fonctionne hébergée n'importe où ou ouverte depuis le disque.
+// VITE_HISTORY=memory : historique en mémoire, pour un hébergement en cadre isolé (artefact claude.ai).
+const history = import.meta.env.VITE_HISTORY === 'memory' ? createMemoryHistory({ initialEntries: ['/'] }) : createHashHistory();
+const router = createRouter({ routeTree: root.addChildren(routes), history });
 
 declare module '@tanstack/react-router' {
   interface Register {

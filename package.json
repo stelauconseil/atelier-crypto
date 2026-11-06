@@ -6,6 +6,7 @@
     "dev": "vp dev",
     "build": "vp build",
     "build:single": "SINGLE=1 vp build",
+    "build:artifact": "SINGLE=1 VITE_HISTORY=memory vp build",
     "test": "vp test",
     "preview": "vp preview",
     "check": "vp check"
