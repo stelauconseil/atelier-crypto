@@ -47,7 +47,7 @@ ou remplacer `src/lib/icons.tsx` par des icônes libres (`@fortawesome/free-soli
 ```bash
 vp install          # dépendances
 vp dev              # serveur de développement
-vp test             # 63 tests : allers-retours, altérations, interopérabilité, attaques
+vp test             # 68 tests : allers-retours, altérations, interopérabilité, attaques
 vp build            # build statique dans dist/
 SINGLE=1 vp build   # un seul fichier HTML autonome dans dist-single/
 vp run test:e2e     # tests Playwright (script du package.json ; aussi : npm run test:e2e)

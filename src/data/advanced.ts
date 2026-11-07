@@ -212,8 +212,10 @@ DH est aussi un **composant** : ECIES et HPKE (pages du chiffrement asymétrique
 Les valeurs sont affichées en octets grand-boutistes, sur la taille de p : c'est ainsi que TLS et IKE les transportent, zéros de tête compris (leur suppression en TLS ≤ 1.2 est la cause de l'attaque Raccoon).` },
     { h: 'Le choix du générateur', t: `Dans (ℤ/pℤ)*, l'ordre de tout élément divise p − 1. Avec un nombre premier **sûr** p = 2q + 1 (q premier), il n'y a que quatre ordres possibles : 1, 2, q et 2q.
 
-- Une **racine primitive** (ordre 2q = p − 1) engendre tout le groupe. Pour p = 47, il y en a φ(46) = 22, dont g = 26 : la table gˣ du jeu **DH War** parcourt alors les 46 valeurs une fois chacune.
-- Un **générateur du sous-groupe d'ordre q** n'engendre que les carrés. Il y en a φ(23) = 22 pour p = 47 (2, 3, 4, 6…, ou le carré de toute racine primitive, comme 26² = 18).
+- Une **racine primitive** (ordre 2q = p − 1) engendre tout le groupe. Pour p = 47, il y en a φ(46) = 22, dont 26, 23 et 31 : la table gˣ du jeu **DH War** parcourt alors les 46 valeurs une fois chacune. Une racine primitive n'est jamais un carré.
+- Un **générateur du sous-groupe d'ordre q** n'engendre que les carrés. Il y en a φ(23) = 22 pour p = 47 (2, 3, 4, 6…), dont le carré de toute racine primitive : 26² = 18, 23² = 12, 31² = 21.
+
+L'atelier propose ces six générateurs pour p = 47 : on voit la fuite de parité apparaître avec les trois premiers et disparaître avec leurs carrés.
 
 Pour DH, on préfère le second : avec une racine primitive, le symbole de Legendre de A (critère d'Euler, A^((p−1)/2) mod p = ±1) révèle la **parité** de a à quiconque observe l'échange, et l'hypothèse DDH tombe. Avec g d'ordre q premier, toutes les valeurs publiques sont des carrés et rien ne fuit. C'est le choix de ffdhe (g = 2, d'ordre q) et du groupe jouet p = 23.` },
     { h: 'Petit sous-groupe et validation', t: `Si Alice élève à sa puissance a une valeur Y choisie par Mallory sans la vérifier :

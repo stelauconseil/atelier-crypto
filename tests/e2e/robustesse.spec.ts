@@ -152,15 +152,18 @@ test.describe('robustesse des ateliers', () => {
   test('DH : changer de groupe dans tous les sens, après calcul', async ({ page }) => {
     await go(page, '/algo/dh');
     const grp = page.locator('.card select.t').first();
-    for (const g of ['dhwar', 'ffdhe2048', 'toy', 'ffdhe2048', 'dhwar', 'toy']) {
+    for (const g of ['p47g26', 'ffdhe2048', 'toy', 'p47g18', 'ffdhe2048', 'p47g31', 'toy']) {
       await page.click("button:has-text('Calculer Z')");
       await grp.selectOption(g);
       await page.click("button:has-text('Calculer Z')");
       await expect(page.locator('.status').first()).toContainText(/Z identique/);
     }
-    await grp.selectOption('dhwar');
+    await grp.selectOption('p47g23');
     await expect(page.locator('.kx-pow td')).toHaveCount(92);
     await expect(page.getByText('tout le monde le voit').first()).toBeVisible();
+    await grp.selectOption('p47g12');
+    await expect(page.locator('.kx-pow td')).toHaveCount(46);
+    await expect(page.getByText('rien à apprendre sur a')).toBeVisible();
   });
 
   test('X25519 : point d\'ordre faible refusé', async ({ page }) => {

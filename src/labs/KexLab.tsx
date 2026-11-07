@@ -3,7 +3,7 @@ import { Fad, IC } from '../lib/icons';
 import { fromUtf8, quote, toB64url, toHex, utf8 } from '../lib/bytes';
 import { seg, type View } from '../crypto/types';
 import {
-  DH_GROUPS, bigBytes, isSquare, powerTable, chipAuthenticate, clamp, cloneChip, compressP256, dhCheck, dhPublic, dhSecret, dhShared,
+  DH_GROUPS, type DhGroup, bigBytes, isSquare, powerTable, chipAuthenticate, clamp, cloneChip, compressP256, dhCheck, dhPublic, dhSecret, dhShared,
   ecdhP256, edPair, eveSteal, eveTry, gridSession, issuerNew, LOW_ORDER, p256Pair, personalize, ratchetDecrypt,
   ratchetEncrypt, ratchetInit, recoverable, sigmaRun, xdh, xPair, type CaRun, type Chip, type Eve, type GridSession,
   type Issuer, type Mode, type RatchetMsg, type RatchetState, type SigmaRun,
@@ -39,13 +39,17 @@ function Duo({ left, right }: { left: ReactNode; right: ReactNode }) {
 
 // ================================================================ DH en corps fini
 type Attack = 'none' | 'pm1' | 'one' | 'out';
-type Gid = keyof typeof DH_GROUPS;
+type Gid = string;
 
-const GEN_NOTE: Record<string, string> = {
-  toy: 'p = 23 = 2 × 11 + 1 est un nombre premier sûr. g = 2 n\'engendre que les 11 carrés modulo 23 : le sous-groupe d\'ordre q = 11, premier. C\'est la forme recommandée (ffdhe aussi utilise g = 2 d\'ordre q) : toutes les valeurs publiques sont des carrés, rien ne fuit sur l\'exposant.',
-  dhwar: 'p = 47 = 2 × 23 + 1 est un nombre premier sûr : les ordres possibles sont 1, 2, 23 et 46, d\'où beaucoup de générateurs (22 racines primitives et 22 générateurs du sous-groupe d\'ordre 23). g = 26 est une racine primitive : la table gˣ parcourt les 46 valeurs non nulles une seule fois, idéal pour le jeu DH War. Le revers : A est un carré si et seulement si a est pair (critère d\'Euler), donc chaque valeur publique trahit la parité de son exposant. En vrai DH, on prend g d\'ordre q (ici 2, 3, 4, 6… ou 26² = 18).',
-  ffdhe2048: 'p est un nombre premier sûr de 2048 bits (ses chiffres viennent de e) et g = 2 engendre le sous-groupe d\'ordre q = (p − 1) / 2. Les groupes de 3072 bits et plus sont ceux à retenir aujourd\'hui.',
-};
+const P47 = 'p = 47 = 2 × 23 + 1 est un nombre premier sûr : un élément ne peut être que d\'ordre 1, 2, 23 ou 46. Il y a 22 racines primitives (ordre 46) et 22 générateurs du sous-groupe d\'ordre 23, celui des carrés.';
+function genNote(G: DhGroup): string {
+  if (G.id === 'toy') return 'p = 23 = 2 × 11 + 1 est un nombre premier sûr. g = 2 n\'engendre que les 11 carrés modulo 23 : le sous-groupe d\'ordre q = 11, premier. C\'est la forme recommandée (ffdhe aussi utilise g = 2 d\'ordre q) : toutes les valeurs publiques sont des carrés, rien ne fuit sur l\'exposant.';
+  if (G.id === 'ffdhe2048') return 'p est un nombre premier sûr de 2048 bits (ses chiffres viennent de e) et g = 2 engendre le sous-groupe d\'ordre q = (p − 1) / 2. Les groupes de 3072 bits et plus sont ceux à retenir aujourd\'hui.';
+  const sq = (G.g * G.g) % G.p;
+  return G.primitive
+    ? `${P47} g = ${G.g} est une racine primitive : la table gˣ parcourt les 46 valeurs non nulles, une fois chacune, ce qui convient au jeu DH War. Mais une racine primitive n'est jamais un carré : A est donc un carré si et seulement si a est pair, et le test A²³ mod 47 (1 = carré, 46 = non-carré) le révèle à tout le monde. Pour un vrai DH, prenez son carré, g = ${sq}.`
+    : `${P47} g = ${G.g} est un carré : il n'engendre que les 23 carrés, et toutes les valeurs publiques sont des carrés. Le test A²³ mod 47 répond toujours 1 et n'apprend rien sur a : c'est la forme à retenir pour un vrai DH, au prix de deux fois moins de valeurs possibles.`;
+}
 
 function DhLab() {
   // Groupe et secrets dans un même état : un changement de groupe ne peut pas laisser des secrets de l'ancien.
@@ -66,9 +70,11 @@ function DhLab() {
   const forged = attack === 'pm1' ? G.p - 1n : attack === 'one' ? 1n : attack === 'out' ? outside : B;
   const num = (x: bigint) => (small ? x.toString() : `${x.toString(16).slice(0, 24)}… (${x.toString(2).length} bits)`);
   const bv = (title: string, x: bigint, tone: 'priv' | 'pub' | 'secret', caption?: string): View => ({ title, caption, segs: [seg(title, bigBytes(x, G.bytes), tone)] });
-  const parity = (Y: bigint, who: string) => G.primitive
-    ? `${Y}^${(G.p - 1n) / 2n} mod ${G.p} = ${isSquare(G, Y) ? '1 : carré' : `${G.p - 1n} : non-carré`} → ${who} est ${isSquare(G, Y) ? 'pair' : 'impair'}, et tout le monde le voit.`
-    : null;
+  const parity = (Y: bigint, who: string) => {
+    if (!small) return null;
+    const test = `${Y}^${(G.p - 1n) / 2n} mod ${G.p} = ${isSquare(G, Y) ? '1 : carré' : `${G.p - 1n} : non-carré`}`;
+    return G.primitive ? `${test} → ${who} est ${isSquare(G, Y) ? 'pair' : 'impair'}, et tout le monde le voit.` : `${test}, comme toujours dans ce groupe → rien à apprendre sur ${who}.`;
+  };
   const table = useMemo(() => (small ? powerTable(G) : []), [gid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const result = useMemo((): { st: St; zA?: bigint; zB?: bigint } => {
@@ -93,13 +99,20 @@ function DhLab() {
     <>
       <Card n={2} title="Le groupe et les deux biclés" right={<span className="ctrls">
         <select className="t" value={gid} onChange={(e) => changeGroup(e.target.value as Gid)}>
-          {Object.values(DH_GROUPS).map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
+          <option value="toy">{DH_GROUPS.toy.label}</option>
+          <optgroup label="DH War, p = 47 : racines primitives (le jeu)">
+            {['p47g26', 'p47g23', 'p47g31'].map((i) => <option key={i} value={i}>{DH_GROUPS[i].label}</option>)}
+          </optgroup>
+          <optgroup label="p = 47 : sous-groupe des carrés (vrai DH)">
+            {['p47g18', 'p47g12', 'p47g21'].map((i) => <option key={i} value={i}>{DH_GROUPS[i].label}</option>)}
+          </optgroup>
+          <option value="ffdhe2048">{DH_GROUPS.ffdhe2048.label}</option>
         </select>
         <EncodingToggle value={enc} onChange={setEnc} />
         <button className="btn b-ghost b-sm" onClick={() => { setK(fresh(gid)); setRun(0); }}><Fad icon={IC.dice} />Nouveaux secrets</button>
       </span>}>
         <div className="formula">p = {num(G.p)} · g = {G.g.toString()} · ordre de g = {G.primitive ? `p − 1 = ${G.q}` : `q = (p − 1) / 2 = ${num(G.q)}`}</div>
-        <div className="tip" style={{ margin: '8px 0' }}><b>Le générateur.</b> {GEN_NOTE[gid]}</div>
+        <div className="tip" style={{ margin: '8px 0' }}><b>Le générateur.</b> {genNote(G)}</div>
         {small && (
           <div className="kx-scroll">
             <table className="kx-table kx-pow">

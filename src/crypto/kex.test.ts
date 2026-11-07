@@ -16,11 +16,20 @@ describe('Diffie-Hellman', () => {
       expect(dhCheck(G, A)).toBeNull();
     });
   }
-  it('DH War (p = 47, g = 26) : racine primitive, la table couvre 1…46, la parité de a fuit', () => {
-    const G = DH_GROUPS.dhwar;
-    const t = powerTable(G);
-    expect(new Set(t.map(String)).size).toBe(46);
-    for (let a = 1n; a < 46n; a++) expect(isSquare(G, dhPublic(G, a))).toBe(a % 2n === 0n);
+  it('p = 47 : racines primitives (table complète, parité qui fuit) et leurs carrés (ordre 23, aucune fuite)', () => {
+    for (const g of [26, 23, 31]) {
+      const G = DH_GROUPS[`p47g${g}`];
+      expect(new Set(powerTable(G).map(String)).size).toBe(46);
+      expect(isSquare(G, G.g)).toBe(false);
+      for (let a = 1n; a < 46n; a++) expect(isSquare(G, dhPublic(G, a))).toBe(a % 2n === 0n);
+    }
+    for (const g of [18, 12, 21]) {
+      const G = DH_GROUPS[`p47g${g}`];
+      const t = powerTable(G);
+      expect(new Set(t.map(String)).size).toBe(23);
+      expect(t.at(-1)).toBe(1n);
+      expect(t.every((y) => isSquare(G, y))).toBe(true);
+    }
     const T = powerTable(DH_GROUPS.toy);
     expect(T).toHaveLength(11);
     expect(T.every((y) => isSquare(DH_GROUPS.toy, y))).toBe(true);

@@ -27,7 +27,11 @@ const FFDHE2048_P = BigInt('0x' +
 
 export const DH_GROUPS: Record<string, DhGroup> = {
   toy: { id: 'toy', label: 'Jouet : p = 23, g = 2 (ordre 11)', p: 23n, g: 2n, q: 11n, bytes: 1 },
-  dhwar: { id: 'dhwar', label: 'DH War : p = 47, g = 26 (racine primitive)', p: 47n, g: 26n, q: 46n, primitive: true, bytes: 1 },
+  // p = 47 = 2 × 23 + 1 : trois racines primitives (DH War) et leurs carrés, qui engendrent le sous-groupe d'ordre 23.
+  ...Object.fromEntries(([[26n, true], [23n, true], [31n, true], [18n, false], [12n, false], [21n, false]] as const).map(([g, prim]) => [
+    `p47g${g}`,
+    { id: `p47g${g}`, label: `p = 47, g = ${g} (${prim ? 'racine primitive, ordre 46' : `ordre 23 = ${g === 18n ? '26' : g === 12n ? '23' : '31'}²`})`, p: 47n, g, q: prim ? 46n : 23n, primitive: prim, bytes: 1 },
+  ])),
   ffdhe2048: { id: 'ffdhe2048', label: 'ffdhe2048 (RFC 7919)', p: FFDHE2048_P, g: 2n, q: (FFDHE2048_P - 1n) / 2n, bytes: 256 },
 };
 
