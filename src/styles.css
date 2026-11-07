@@ -286,3 +286,11 @@ label.f.fit { flex: 0 0 auto; min-width: 0; }
 .kx-state code { font-family: var(--mono); font-size: 12px; border-radius: 4px; padding: 1px 4px; }
 .kx-state i { font-style: normal; color: var(--mute); font-size: 11.5px; }
 @media (max-width: 1200px) { .kx-grid { grid-template-columns: 90px 1fr 1fr; } }
+
+.kx-pow { font-family: var(--mono); font-size: 12px; }
+.kx-pow th { white-space: nowrap; }
+.kx-pow td { text-align: center; padding: 4px 6px; border-left: 1px solid var(--line); white-space: nowrap; overflow-wrap: normal; min-width: 26px; }
+.kx-pow tr.sep th, .kx-pow tr.sep td { border-top: 2px solid var(--line); }
+.kx-pow td.is-a { background: color-mix(in srgb, var(--c-pt) 26%, transparent); font-weight: 700; }
+.kx-pow td.is-b { background: color-mix(in srgb, var(--c-pub) 20%, transparent); font-weight: 700; }
+.kx-pow td.odd { color: var(--mute); }

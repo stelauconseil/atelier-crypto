@@ -14,8 +14,10 @@ export interface DhGroup {
   label: string;
   p: bigint;
   g: bigint;
-  /** Ordre du sous-groupe engendré par g : q = (p − 1) / 2 pour un nombre premier sûr. */
+  /** Ordre du sous-groupe engendré par g : q = (p − 1) / 2 premier (g d'ordre q), ou p − 1 (racine primitive). */
   q: bigint;
+  /** g est une racine primitive : il engendre tout le groupe (ℤ/pℤ)*, sous-groupes d'ordre 2 compris. */
+  primitive?: boolean;
   bytes: number;
 }
 
@@ -24,7 +26,8 @@ const FFDHE2048_P = BigInt('0x' +
   'FFFFFFFFFFFFFFFFADF85458A2BB4A9AAFDC5620273D3CF1D8B9C583CE2D3695A9E13641146433FBCC939DCE249B3EF97D2FE363630C75D8F681B202AEC4617AD3DF1ED5D5FD65612433F51F5F066ED0856365553DED1AF3B557135E7F57C935984F0C70E0E68B77E2A689DAF3EFE8721DF158A136ADE73530ACCA4F483A797ABC0AB182B324FB61D108A94BB2C8E3FBB96ADAB760D7F4681D4F42A3DE394DF4AE56EDE76372BB190B07A7C8EE0A6D709E02FCE1CDF7E2ECC03404CD28342F619172FE9CE98583FF8E4F1232EEF28183C3FE3B1B4C6FAD733BB5FCBC2EC22005C58EF1837D1683B2C6F34A26C1B2EFFA886B423861285C97FFFFFFFFFFFFFFFF');
 
 export const DH_GROUPS: Record<string, DhGroup> = {
-  toy: { id: 'toy', label: 'Jouet : p = 23, g = 2', p: 23n, g: 2n, q: 11n, bytes: 1 },
+  toy: { id: 'toy', label: 'Jouet : p = 23, g = 2 (ordre 11)', p: 23n, g: 2n, q: 11n, bytes: 1 },
+  dhwar: { id: 'dhwar', label: 'DH War : p = 47, g = 26 (racine primitive)', p: 47n, g: 26n, q: 46n, primitive: true, bytes: 1 },
   ffdhe2048: { id: 'ffdhe2048', label: 'ffdhe2048 (RFC 7919)', p: FFDHE2048_P, g: 2n, q: (FFDHE2048_P - 1n) / 2n, bytes: 256 },
 };
 
@@ -36,9 +39,21 @@ export function dhSecret(G: DhGroup): bigint {
 
 export const dhPublic = (G: DhGroup, x: bigint) => modPow(G.g, x, G.p);
 
+/** Critère d'Euler : Y^((p−1)/2) mod p vaut 1 si Y est un carré modulo p, p − 1 sinon. */
+export const isSquare = (G: DhGroup, Y: bigint) => modPow(Y, (G.p - 1n) / 2n, G.p) === 1n;
+
+/** Table des puissances g^x mod p, x = 1 … ordre de g (petits groupes seulement). */
+export function powerTable(G: DhGroup): bigint[] {
+  const t: bigint[] = [];
+  let y = 1n;
+  for (let x = 1n; x <= G.q; x++) t.push((y = (y * G.g) % G.p));
+  return t;
+}
+
 /** Validation d'une valeur publique reçue (SP 800-56A §5.6.2.3.1) : 1 < Y < p − 1 et Y^q = 1. */
 export function dhCheck(G: DhGroup, Y: bigint): string | null {
   if (Y <= 1n || Y >= G.p - 1n) return `Y = ${Y <= 1n ? Y : 'p − 1'} : valeur dégénérée, elle force Z dans {1, p − 1}.`;
+  if (Y >= G.p) return 'Y ≥ p : valeur hors du groupe.';
   if (modPow(Y, G.q, G.p) !== 1n) return 'Y n\'est pas dans le sous-groupe d\'ordre q : attaque par petit sous-groupe possible.';
   return null;
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vite-plus/test';
 import { toHex, utf8, fromUtf8, fromHex } from '../lib/bytes';
 import {
   DH_GROUPS, dhSecret, dhPublic, dhShared, dhCheck, p256Pair, ecdhP256, xPair, xdh, clamp, LOW_ORDER,
-  gridSession, recoverable, edPair, sigmaRun, issuerNew, personalize, cloneChip, chipAuthenticate, iso9797,
+  gridSession, recoverable, isSquare, powerTable, edPair, sigmaRun, issuerNew, personalize, cloneChip, chipAuthenticate, iso9797,
   ratchetInit, ratchetEncrypt, ratchetDecrypt, eveSteal, eveTry,
 } from './kex';
 import { x25519 } from '@noble/curves/ed25519.js';
@@ -16,6 +16,15 @@ describe('Diffie-Hellman', () => {
       expect(dhCheck(G, A)).toBeNull();
     });
   }
+  it('DH War (p = 47, g = 26) : racine primitive, la table couvre 1…46, la parité de a fuit', () => {
+    const G = DH_GROUPS.dhwar;
+    const t = powerTable(G);
+    expect(new Set(t.map(String)).size).toBe(46);
+    for (let a = 1n; a < 46n; a++) expect(isSquare(G, dhPublic(G, a))).toBe(a % 2n === 0n);
+    const T = powerTable(DH_GROUPS.toy);
+    expect(T).toHaveLength(11);
+    expect(T.every((y) => isSquare(DH_GROUPS.toy, y))).toBe(true);
+  });
   it('petit sous-groupe : Y = p − 1 ou 1 refusé, sinon Z ∈ {1, p − 1}', () => {
     const G = DH_GROUPS.ffdhe2048;
     const a = dhSecret(G);

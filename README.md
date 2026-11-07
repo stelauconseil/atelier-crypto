@@ -47,7 +47,7 @@ ou remplacer `src/lib/icons.tsx` par des icônes libres (`@fortawesome/free-soli
 ```bash
 vp install          # dépendances
 vp dev              # serveur de développement
-vp test             # 61 tests : allers-retours, altérations, interopérabilité, attaques
+vp test             # 63 tests : allers-retours, altérations, interopérabilité, attaques
 vp build            # build statique dans dist/
 SINGLE=1 vp build   # un seul fichier HTML autonome dans dist-single/
 vp run test:e2e     # tests Playwright (script du package.json ; aussi : npm run test:e2e)
@@ -64,7 +64,7 @@ chaque atelier affiche le bon verdict (⊥ après altération, JWS vérifié, or
 
 ```bash
 npx playwright install chromium   # une fois
-npm run test:e2e                  # build + vp preview, puis les 54 tests
+npm run test:e2e                  # build + vp preview, puis les 58 tests
 ATELIER_URL=file://$PWD/dist-single/index.html npm run test:e2e   # sur un build en fichier unique
 ```
 

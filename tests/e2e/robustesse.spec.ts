@@ -40,8 +40,39 @@ test.describe('robustesse des ateliers', () => {
     await page.waitForSelector('.side');
   });
 
-  test.afterEach(() => {
+  test.afterEach(async ({ page }) => {
     expect(errors, 'erreurs JavaScript dans la page').toEqual([]);
+    // Une erreur de rendu attrapée par le routeur n'émet pas de pageerror : on cherche son écran.
+    await expect(page.getByText('Something went wrong'), 'écran d\'erreur du routeur').toHaveCount(0);
+  });
+
+  test('chaque sélecteur, dans les deux sens, après un premier calcul', async ({ page }) => {
+    test.setTimeout(240_000);
+    const links = await page.locator('.side a[href*="/algo/"]').evaluateAll((as) => as.map((a) => a.getAttribute('href') ?? ''));
+    const fire = async () => {
+      const b = page.locator('main button.b-pri');
+      for (let i = 0; i < Math.min(await b.count(), 3); i++) if (await b.nth(i).isEnabled()) await b.nth(i).click({ timeout: 5000 }).catch(() => {});
+    };
+    for (const h of links) {
+      await page.click(`.side a[href='${h}']`);
+      await page.waitForTimeout(h.includes('rsa') ? 2500 : 400);
+      await fire();
+      const sels = page.locator('main select');
+      for (let s = 0; s < (await sels.count()); s++) {
+        const opts = await sels.nth(s).locator('option').evaluateAll((o) => o.map((x) => (x as HTMLOptionElement).value));
+        for (const o of [...opts, ...opts.slice().reverse()]) {
+          await sels.nth(s).selectOption(o);
+          await page.waitForTimeout(100);
+          await expect(page.getByText('Something went wrong'), `${h}, sélecteur ${s} = ${o}`).toHaveCount(0);
+        }
+      }
+      const segs = page.locator('main .segctl button');
+      for (const i of [...Array(await segs.count()).keys(), ...[...Array(await segs.count()).keys()].reverse()]) {
+        await segs.nth(i).click();
+        await page.waitForTimeout(80);
+        await expect(page.getByText('Something went wrong'), `${h}, bouton segmenté ${i}`).toHaveCount(0);
+      }
+    }
   });
 
   for (const c of CASES) {
@@ -116,6 +147,20 @@ test.describe('robustesse des ateliers', () => {
     await page.click("button:has-text('Calculer Z')");
     await expect(page.locator('.status').first()).toContainText(/Z identique/);
     await noOverflow(page);
+  });
+
+  test('DH : changer de groupe dans tous les sens, après calcul', async ({ page }) => {
+    await go(page, '/algo/dh');
+    const grp = page.locator('.card select.t').first();
+    for (const g of ['dhwar', 'ffdhe2048', 'toy', 'ffdhe2048', 'dhwar', 'toy']) {
+      await page.click("button:has-text('Calculer Z')");
+      await grp.selectOption(g);
+      await page.click("button:has-text('Calculer Z')");
+      await expect(page.locator('.status').first()).toContainText(/Z identique/);
+    }
+    await grp.selectOption('dhwar');
+    await expect(page.locator('.kx-pow td')).toHaveCount(92);
+    await expect(page.getByText('tout le monde le voit').first()).toBeVisible();
   });
 
   test('X25519 : point d\'ordre faible refusé', async ({ page }) => {

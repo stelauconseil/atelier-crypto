@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Fad, IC } from '../lib/icons';
 import { fromUtf8, quote, toB64url, toHex, utf8 } from '../lib/bytes';
 import { seg, type View } from '../crypto/types';
 import {
-  DH_GROUPS, bigBytes, chipAuthenticate, clamp, cloneChip, compressP256, dhCheck, dhPublic, dhSecret, dhShared,
+  DH_GROUPS, bigBytes, isSquare, powerTable, chipAuthenticate, clamp, cloneChip, compressP256, dhCheck, dhPublic, dhSecret, dhShared,
   ecdhP256, edPair, eveSteal, eveTry, gridSession, issuerNew, LOW_ORDER, p256Pair, personalize, ratchetDecrypt,
   ratchetEncrypt, ratchetInit, recoverable, sigmaRun, xdh, xPair, type CaRun, type Chip, type Eve, type GridSession,
   type Issuer, type Mode, type RatchetMsg, type RatchetState, type SigmaRun,
@@ -39,22 +39,37 @@ function Duo({ left, right }: { left: ReactNode; right: ReactNode }) {
 
 // ================================================================ DH en corps fini
 type Attack = 'none' | 'pm1' | 'one' | 'out';
+type Gid = keyof typeof DH_GROUPS;
+
+const GEN_NOTE: Record<string, string> = {
+  toy: 'p = 23 = 2 × 11 + 1 est un nombre premier sûr. g = 2 n\'engendre que les 11 carrés modulo 23 : le sous-groupe d\'ordre q = 11, premier. C\'est la forme recommandée (ffdhe aussi utilise g = 2 d\'ordre q) : toutes les valeurs publiques sont des carrés, rien ne fuit sur l\'exposant.',
+  dhwar: 'p = 47 = 2 × 23 + 1 est un nombre premier sûr : les ordres possibles sont 1, 2, 23 et 46, d\'où beaucoup de générateurs (22 racines primitives et 22 générateurs du sous-groupe d\'ordre 23). g = 26 est une racine primitive : la table gˣ parcourt les 46 valeurs non nulles une seule fois, idéal pour le jeu DH War. Le revers : A est un carré si et seulement si a est pair (critère d\'Euler), donc chaque valeur publique trahit la parité de son exposant. En vrai DH, on prend g d\'ordre q (ici 2, 3, 4, 6… ou 26² = 18).',
+  ffdhe2048: 'p est un nombre premier sûr de 2048 bits (ses chiffres viennent de e) et g = 2 engendre le sous-groupe d\'ordre q = (p − 1) / 2. Les groupes de 3072 bits et plus sont ceux à retenir aujourd\'hui.',
+};
 
 function DhLab() {
-  const [gid, setGid] = useState<'toy' | 'ffdhe2048'>('toy');
+  // Groupe et secrets dans un même état : un changement de groupe ne peut pas laisser des secrets de l'ancien.
+  const fresh = (gid: Gid) => { const G = DH_GROUPS[gid]; return { gid, a: dhSecret(G), b: dhSecret(G) }; };
+  const [k, setK] = useState(() => fresh('toy'));
+  const gid = k.gid;
   const G = DH_GROUPS[gid];
-  const [k, setK] = useState(() => ({ a: dhSecret(G), b: dhSecret(G) }));
+  const small = G.bytes === 1;
   const [attack, setAttack] = useState<Attack>('none');
   const [validate, setValidate] = useState(true);
   const [run, setRun] = useState(0);
   const [enc, setEnc] = useState<Encoding>('hex');
-  useEffect(() => { setK({ a: dhSecret(G), b: dhSecret(G) }); setAttack('none'); }, [gid]); // eslint-disable-line react-hooks/exhaustive-deps
+  const changeGroup = (g: Gid) => { setK(fresh(g)); setAttack('none'); setRun(0); };
 
   const A = dhPublic(G, k.a);
   const B = dhPublic(G, k.b);
-  const forged = attack === 'pm1' ? G.p - 1n : attack === 'one' ? 1n : attack === 'out' ? (gid === 'toy' ? 5n : G.p - 2n) : B;
-  const num = (x: bigint) => (gid === 'toy' ? x.toString() : `${x.toString(16).slice(0, 24)}… (${x.toString(2).length} bits)`);
+  const outside = gid === 'toy' ? 5n : G.p - 2n;
+  const forged = attack === 'pm1' ? G.p - 1n : attack === 'one' ? 1n : attack === 'out' ? outside : B;
+  const num = (x: bigint) => (small ? x.toString() : `${x.toString(16).slice(0, 24)}… (${x.toString(2).length} bits)`);
   const bv = (title: string, x: bigint, tone: 'priv' | 'pub' | 'secret', caption?: string): View => ({ title, caption, segs: [seg(title, bigBytes(x, G.bytes), tone)] });
+  const parity = (Y: bigint, who: string) => G.primitive
+    ? `${Y}^${(G.p - 1n) / 2n} mod ${G.p} = ${isSquare(G, Y) ? '1 : carré' : `${G.p - 1n} : non-carré`} → ${who} est ${isSquare(G, Y) ? 'pair' : 'impair'}, et tout le monde le voit.`
+    : null;
+  const table = useMemo(() => (small ? powerTable(G) : []), [gid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const result = useMemo((): { st: St; zA?: bigint; zB?: bigint } => {
     if (!run) return { st: null };
@@ -62,9 +77,9 @@ function DhLab() {
     try {
       const zA = dhShared(G, k.a, forged, validate);
       if (attack === 'none') return { st: { kind: 'ok', text: 'Z identique des deux côtés, sans qu\'il ait jamais circulé.' }, zA, zB };
-      const small = zA === 1n || zA === G.p - 1n;
+      const deg = zA === 1n || zA === G.p - 1n;
       return {
-        st: small
+        st: deg
           ? { kind: 'ko', text: `Validation désactivée : Z = ${zA === 1n ? '1' : 'p − 1'}. Mallory le devine en deux essais, quel que soit le secret a.` }
           : { kind: 'ko', text: 'Validation désactivée : Z sort du sous-groupe et trahit des informations sur a (sa parité ici).' },
         zA, zB,
@@ -72,21 +87,39 @@ function DhLab() {
     } catch (e) {
       return { st: { kind: 'ok', text: `Valeur refusée par Alice : ${errText(e)}` }, zB };
     }
-  }, [run, k, attack, validate, gid]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [run, k, attack, validate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
       <Card n={2} title="Le groupe et les deux biclés" right={<span className="ctrls">
-        <select className="t" value={gid} onChange={(e) => setGid(e.target.value as 'toy' | 'ffdhe2048')}>
+        <select className="t" value={gid} onChange={(e) => changeGroup(e.target.value as Gid)}>
           {Object.values(DH_GROUPS).map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
         </select>
         <EncodingToggle value={enc} onChange={setEnc} />
-        <button className="btn b-ghost b-sm" onClick={() => setK({ a: dhSecret(G), b: dhSecret(G) })}><Fad icon={IC.dice} />Nouveaux secrets</button>
+        <button className="btn b-ghost b-sm" onClick={() => { setK(fresh(gid)); setRun(0); }}><Fad icon={IC.dice} />Nouveaux secrets</button>
       </span>}>
-        <div className="formula">p = {num(G.p)} · g = {G.g.toString()} · q = (p − 1) / 2 = {num(G.q)}</div>
+        <div className="formula">p = {num(G.p)} · g = {G.g.toString()} · ordre de g = {G.primitive ? `p − 1 = ${G.q}` : `q = (p − 1) / 2 = ${num(G.q)}`}</div>
+        <div className="tip" style={{ margin: '8px 0' }}><b>Le générateur.</b> {GEN_NOTE[gid]}</div>
+        {small && (
+          <div className="kx-scroll">
+            <table className="kx-table kx-pow">
+              <tbody>
+                {Array.from({ length: Math.ceil(table.length / 23) }, (_, r) => {
+                  const cells = table.slice(r * 23, r * 23 + 23).map((y, j) => ({ x: BigInt(r * 23 + j + 1), y }));
+                  const cls = (x: bigint, y?: bigint) => `${x === k.a ? 'is-a' : x === k.b ? 'is-b' : ''} ${y !== undefined && G.primitive && !isSquare(G, y) ? 'odd' : ''}`;
+                  return [
+                    <tr key={`x${r}`} className={r ? 'sep' : ''}><th>x</th>{cells.map((c) => <td key={String(c.x)} className={cls(c.x)}>{String(c.x)}</td>)}</tr>,
+                    <tr key={`y${r}`}><th>{G.g.toString()}ˣ mod {G.p.toString()}</th>{cells.map((c) => <td key={String(c.x)} className={cls(c.x, c.y)}>{String(c.y)}</td>)}</tr>,
+                  ];
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {small && <div className="meta">Colonne bleue : le secret d'Alice ; verte : celui de Bob.{G.primitive ? ' En gris : les non-carrés, obtenus pour x impair.' : ` La table s'arrête à x = ${G.q} : ensuite elle recommence (g^${G.q} = 1).`}</div>}
         <Duo
-          left={<><div className="meta">a = {num(k.a)}</div><ByteView view={bv('a (secret)', k.a, 'priv')} encoding={enc} /><ByteView view={bv('A = gᵃ mod p', A, 'pub', gid === 'toy' ? `A = ${G.g}^${k.a} mod ${G.p} = ${A}` : `A = ${num(A)}`)} encoding={enc} /></>}
-          right={<><div className="meta">b = {num(k.b)}</div><ByteView view={bv('b (secret)', k.b, 'priv')} encoding={enc} /><ByteView view={bv('B = gᵇ mod p', B, 'pub', gid === 'toy' ? `B = ${G.g}^${k.b} mod ${G.p} = ${B}` : `B = ${num(B)}`)} encoding={enc} /></>}
+          left={<><div className="meta">a = {num(k.a)}</div><ByteView view={bv('a (secret)', k.a, 'priv')} encoding={enc} /><ByteView view={bv('A = gᵃ mod p', A, 'pub', small ? `A = ${G.g}^${k.a} mod ${G.p} = ${A}` : `A = ${num(A)}`)} encoding={enc} />{parity(A, 'a') && <div className="meta">Ève : {parity(A, 'a')}</div>}</>}
+          right={<><div className="meta">b = {num(k.b)}</div><ByteView view={bv('b (secret)', k.b, 'priv')} encoding={enc} /><ByteView view={bv('B = gᵇ mod p', B, 'pub', small ? `B = ${G.g}^${k.b} mod ${G.p} = ${B}` : `B = ${num(B)}`)} encoding={enc} />{parity(B, 'b') && <div className="meta">Ève : {parity(B, 'b')}</div>}</>}
         />
       </Card>
       <Card n={3} title="Échanger A et B, calculer Z">
@@ -97,7 +130,7 @@ function DhLab() {
               <option value="none">B, la vraie valeur de Bob</option>
               <option value="pm1">p − 1 (ordre 2), injecté par Mallory</option>
               <option value="one">1 (ordre 1), injecté par Mallory</option>
-              <option value="out">{gid === 'toy' ? '5, hors du sous-groupe d\'ordre q' : 'p − 2, hors du sous-groupe'}</option>
+              {!G.primitive && <option value="out">{gid === 'toy' ? '5, hors du sous-groupe d\'ordre q' : 'p − 2, hors du sous-groupe'}</option>}
             </select>
           </label>
           <label className="chk"><input type="checkbox" checked={validate} onChange={(e) => setValidate(e.target.checked)} /> Alice valide la valeur reçue</label>
@@ -107,8 +140,8 @@ function DhLab() {
         <Status s={result.st} />
         {run > 0 && (
           <Duo
-            left={result.zA !== undefined ? <><ByteView view={bv('Z calculé par Alice', result.zA, 'secret', gid === 'toy' ? `Z = ${forged}^${k.a} mod ${G.p} = ${result.zA}` : `Z = ${num(result.zA)}`)} encoding={enc} /><ByteView view={{ title: 'Clé dérivée : HKDF-SHA256(Z)', segs: [seg('K', hkdf(bigBytes(result.zA, G.bytes), new Uint8Array(0), utf8('atelier dh'), 16), 'key')] }} encoding={enc} /></> : <div className="meta">Pas de Z : la valeur a été rejetée.</div>}
-            right={result.zB !== undefined ? <ByteView view={bv('Z calculé par Bob', result.zB, 'secret', gid === 'toy' ? `Z = ${A}^${k.b} mod ${G.p} = ${result.zB}` : `Z = ${num(result.zB)}`)} encoding={enc} /> : null}
+            left={result.zA !== undefined ? <><ByteView view={bv('Z calculé par Alice', result.zA, 'secret', small ? `Z = ${forged}^${k.a} mod ${G.p} = ${result.zA}` : `Z = ${num(result.zA)}`)} encoding={enc} /><ByteView view={{ title: 'Clé dérivée : HKDF-SHA256(Z)', segs: [seg('K', hkdf(bigBytes(result.zA, G.bytes), new Uint8Array(0), utf8('atelier dh'), 16), 'key')] }} encoding={enc} /></> : <div className="meta">Pas de Z : la valeur a été rejetée.</div>}
+            right={result.zB !== undefined ? <ByteView view={bv('Z calculé par Bob', result.zB, 'secret', small ? `Z = ${A}^${k.b} mod ${G.p} = ${result.zB}` : `Z = ${num(result.zB)}`)} encoding={enc} /> : null}
           />
         )}
       </Card>
