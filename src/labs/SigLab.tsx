@@ -8,16 +8,17 @@ import { ByteView, EncodingToggle, type Encoding } from '../components/ByteView'
 import { Card, FormatTabs, Pipeline, Status, useBusy } from '../components/ui';
 import { errText, tamper } from './common';
 import { JoseView } from '../components/JoseView';
+import { isKeyPair, loadValue, saveValue, usePersisted, z } from '../lib/persist';
 
 type St = { kind: 'ok' | 'ko' | 'info'; text: string } | null;
 
 export function SigLab({ id }: { id: string }) {
   const A = SIG[id];
-  const [variant, setVariant] = useState(A.variants?.[0].id);
+  const [variant, setVariant] = usePersisted<string | undefined>(id, 'variant', A.variants?.[0].id, z.string().optional().refine((v) => !A.variants || A.variants.some((x) => x.id === v)));
   const [keys, setKeys] = useState<any>(null);
   const [pub, setPub] = useState<View[]>([]);
   const [priv, setPriv] = useState<View[]>([]);
-  const [msg, setMsg] = useState('Je soussigné, Benoit, autorise le virement de 100 € à Alice.');
+  const [msg, setMsg] = usePersisted(id, 'msg', 'Je soussigné, Benoit, autorise le virement de 100 € à Alice.', z.string());
   const [sig, setSig] = useState<Seg[] | null>(null);
   const [prev, setPrev] = useState<string | null>(null);
   const [inside, setInside] = useState<View[]>([]);
@@ -35,8 +36,20 @@ export function SigLab({ id }: { id: string }) {
     const r = await A.keygen(variant);
     setKeys(r.keys); setPub(r.pub); setPriv(r.priv); setSig(null); setSt2(null); setPrev(null);
     setSt({ kind: 'info', text: `Biclé générée en ${(performance.now() - t).toFixed(0)} ms.` });
+    saveValue(id, `keypair:${variant ?? ''}`, r);
   });
-  useEffect(() => { void keygen(); }, [id, variant]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Biclé de la dernière visite (pour cette variante) si elle existe, sinon une nouvelle.
+  useEffect(() => {
+    let live = true;
+    void loadValue(id, `keypair:${variant ?? ''}`).then((r) => {
+      if (!live) return;
+      if (isKeyPair(r)) {
+        setKeys(r.keys); setPub(r.pub as View[]); setPriv(r.priv as View[]); setSig(null); setSt2(null); setPrev(null);
+        setSt({ kind: 'info', text: 'Biclé reprise de votre dernière visite (« Nouvelle biclé » pour en tirer une autre).' });
+      } else void keygen();
+    });
+    return () => { live = false; };
+  }, [id, variant]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sign = wrap('sign', async () => {
     setSt2(null); setVInside([]);
@@ -114,8 +127,8 @@ export function SigLab({ id }: { id: string }) {
 }
 
 function NonceReuse() {
-  const [m1, setM1] = useState('Virement de 10 € à Alice');
-  const [m2, setM2] = useState('Virement de 20 € à Bob');
+  const [m1, setM1] = usePersisted('ecdsa', 'ps3-m1', 'Virement de 10 € à Alice', z.string());
+  const [m2, setM2] = usePersisted('ecdsa', 'ps3-m2', 'Virement de 20 € à Bob', z.string());
   const [out, setOut] = useState<null | { d: bigint; k: bigint; a: any; b: any; rec: { d: bigint; k: bigint } }>(null);
   const run = () => {
     const d = os2ip(p256.utils.randomSecretKey());

@@ -1,7 +1,8 @@
-export type Lane = 'sym' | 'rsa' | 'ec' | 'sig' | 'pq';
+export type Lane = 'sym' | 'hash' | 'rsa' | 'ec' | 'sig' | 'pq';
 
 export const LANES: { id: Lane; label: string; color: string }[] = [
   { id: 'sym', label: 'Symétrique', color: 'var(--teal)' },
+  { id: 'hash', label: 'Hachage et MAC', color: 'var(--green)' },
   { id: 'rsa', label: 'RSA', color: 'var(--navy)' },
   { id: 'ec', label: 'DH / courbes', color: 'var(--orange)' },
   { id: 'sig', label: 'Signatures', color: 'var(--plum)' },
@@ -18,6 +19,22 @@ export interface Ev {
 }
 
 export const EVENTS: Ev[] = [
+  { year: 1989, lane: 'hash', title: 'Merkle-Damgård', detail: 'Merkle et Damgård, séparément : une compression résistante aux collisions donne un hachage qui l\'est aussi.', algo: 'sha256' },
+  { year: 1992, lane: 'hash', title: 'MD5', detail: 'RFC 1321 (Rivest).' },
+  { year: 1995, lane: 'hash', title: 'SHA-1', detail: 'FIPS 180-1 : corrige SHA-0 (1993).' },
+  { year: 1996, lane: 'hash', title: 'HMAC', detail: 'Bellare, Canetti, Krawczyk ; RFC 2104 en 1997.', algo: 'hmac' },
+  { year: 2000, lane: 'hash', title: 'PBKDF2', detail: 'PKCS#5 v2.0 (RFC 2898) : HMAC itéré pour les mots de passe.', algo: 'pwhash' },
+  { year: 2001, lane: 'hash', title: 'SHA-2', detail: 'SHA-256, 384, 512 ; FIPS 180-2 en 2002.', algo: 'sha256' },
+  { year: 2004, lane: 'hash', title: 'Collisions MD5', detail: 'Wang et al. : collisions en quelques heures, puis secondes.', bad: true },
+  { year: 2008, lane: 'hash', title: 'Fausse AC par MD5', detail: 'Sotirov, Stevens et al. : certificat d\'autorité forgé par collision à préfixe choisi.', bad: true },
+  { year: 2008, lane: 'hash', title: 'BLAKE', detail: 'Aumasson, Henzen, Meier, Phan : candidat à SHA-3, finaliste.', algo: 'blake' },
+  { year: 2009, lane: 'hash', title: 'scrypt', detail: 'Percival : une KDF difficile en mémoire.', algo: 'pwhash' },
+  { year: 2010, lane: 'hash', title: 'HKDF', detail: 'Krawczyk ; RFC 5869.', algo: 'hkdf' },
+  { year: 2012, lane: 'hash', title: 'Keccak lauréat ; BLAKE2', detail: 'Keccak devient SHA-3 ; BLAKE2 sort la même année.', algo: 'sha3' },
+  { year: 2015, lane: 'hash', title: 'FIPS 202 ; Argon2', detail: 'SHA-3 et SHAKE normalisés ; Argon2 remporte la Password Hashing Competition.', algo: 'pwhash' },
+  { year: 2019, lane: 'hash', title: 'Too Much Crypto', detail: 'Aumasson : la plupart des primitives symétriques font trop de tours.', algo: 'blake' },
+  { year: 2020, lane: 'hash', title: 'BLAKE3 ; SHA-1 en miettes', detail: 'BLAKE3 (7 tours, arbre) ; collision SHA-1 à préfixe choisi (Leurent, Peyrin).', algo: 'blake' },
+  { year: 2021, lane: 'hash', title: 'Argon2 normalisé', detail: 'RFC 9106.', algo: 'pwhash' },
   { year: 1977, lane: 'sym', title: 'DES', detail: 'FIPS 46 : bloc 64 bits, clé 56 bits ; cassé par force brute en 1998.' },
   { year: 1981, lane: 'sym', title: 'Modes ECB, CBC, CFB, OFB', detail: 'FIPS 81.', algo: 'ecb' },
   { year: 2001, lane: 'sym', title: 'AES et CTR', detail: 'FIPS 197 (Rijndael) ; CTR normalisé (SP 800-38A).', algo: 'ctr' },
@@ -60,7 +77,7 @@ export const EVENTS: Ev[] = [
   { year: 2006, lane: 'sig', title: 'Falsification e = 3', detail: 'Bleichenbacher : vérificateurs laxistes ; BERserk en 2014.', bad: true },
   { year: 2010, lane: 'sig', title: 'Sony PS3', detail: 'Nonce ECDSA fixe : clé privée retrouvée.', algo: 'ecdsa', bad: true },
   { year: 2011, lane: 'sig', title: 'Ed25519', detail: 'Bernstein et al. ; RFC 8032 en 2017.', algo: 'ed25519' },
-  { year: 2017, lane: 'sig', title: 'SHAttered', detail: 'Première collision SHA-1.', bad: true },
+  { year: 2017, lane: 'hash', title: 'SHAttered', detail: 'Première collision SHA-1 (Google, CWI) : deux PDF de même haché.', bad: true },
   { year: 2023, lane: 'sig', title: 'FIPS 186-5', detail: 'EdDSA approuvé, DSA retiré.' },
 
   { year: 1994, lane: 'pq', title: 'Algorithme de Shor', detail: 'Factorisation et logarithme discret en temps polynomial sur ordinateur quantique.' },

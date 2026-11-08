@@ -14,6 +14,8 @@ import {
   faCalendarRange, faFilter, faFileCode, faGraduationCap,
   faHandshake, faSquareRootVariable, faBezierCurve, faWaveSine, faGrid2, faUserCheck, faPassport, faArrowsSpin,
   faUserNinja, faBandage, faMicrochip, faIdCard, faMessages, faEquals, faArrowsRotate,
+  faHashtag, faFaucetDrip, faBlender, faStamp, faSitemap, faDumbbell, faFilePdf, faBooks, faDownload,
+  faRotateLeft, faTrashCan, faFloppyDisk, faPause, faPlay,
 } from '@awesome.me/kit-c549591fa3/icons/duotone/solid';
 
 config.autoAddCss = false;
@@ -31,6 +33,8 @@ export const IC = {
   filter: faFilter, file: faFileCode, learn: faGraduationCap,
   kex: faHandshake, attacker: faUserNinja, heal: faBandage, chip: faMicrochip, idcard: faIdCard, chat: faMessages,
   equal: faEquals, again: faArrowsRotate, clone: faClone,
+  hash: faFingerprint, pdf: faFilePdf, books: faBooks, download: faDownload, reset: faRotateLeft, trash: faTrashCan,
+  saved: faFloppyDisk, pause: faPause, play: faPlay,
 } satisfies Record<string, IconDefinition>;
 
 /** Une icône par algorithme : clin d'œil à ce qui le caractérise. */
@@ -63,6 +67,12 @@ export const ALGO_ICON: Record<string, IconDefinition> = {
   sigma: faUserCheck, // l'identité signée
   'chip-auth': faPassport,
   ratchet: faArrowsSpin, // le cliquet
+  sha256: faHashtag,
+  sha3: faFaucetDrip, // l'éponge qu'on essore
+  blake: faBlender, // le mixeur
+  hmac: faStamp, // le cachet
+  hkdf: faSitemap, // une clé en donne plusieurs
+  pwhash: faDumbbell, // l'effort imposé à l'attaquant
 };
 
 const NUMS = [faCircle1, faCircle2, faCircle3, faCircle4, faCircle5, faCircle6, faCircle7, faCircle8, faCircle9];

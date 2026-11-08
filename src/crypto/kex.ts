@@ -37,8 +37,11 @@ export const DH_GROUPS: Record<string, DhGroup> = {
 
 /** Exposant secret : uniforme dans [1, q − 1] (dans [2, q − 1] pour le groupe jouet, pour éviter le cas trivial). */
 export function dhSecret(G: DhGroup): bigint {
-  if (G.q < 1n << 16n) return 2n + BigInt(Math.floor(Math.random() * Number(G.q - 2n)));
-  return 1n + (os2ip(rand(G.bytes + 8)) % (G.q - 1n));
+  for (;;) {
+    const x = G.q < 1n << 16n ? 2n + BigInt(Math.floor(Math.random() * Number(G.q - 2n))) : 1n + (os2ip(rand(G.bytes + 8)) % (G.q - 1n));
+    // Avec une racine primitive, x = (p − 1) / 2 donnerait gˣ = p − 1, valeur d'ordre 2 que la validation refuserait.
+    if (modPow(G.g, x, G.p) !== G.p - 1n) return x;
+  }
 }
 
 export const dhPublic = (G: DhGroup, x: bigint) => modPow(G.g, x, G.p);

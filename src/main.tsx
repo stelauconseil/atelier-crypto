@@ -9,6 +9,7 @@ import { AlgoPage } from './pages/AlgoPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { NotionsPage } from './pages/NotionsPage';
 import { PalettePage } from './pages/PalettePage';
+import { PlanchesPage } from './pages/PlanchesPage';
 
 const root = createRootRoute({ component: Layout });
 const routes = [
@@ -17,6 +18,7 @@ const routes = [
   createRoute({ getParentRoute: () => root, path: '/histoire', component: HistoryPage }),
   createRoute({ getParentRoute: () => root, path: '/notions', component: NotionsPage }),
   createRoute({ getParentRoute: () => root, path: '/palette', component: PalettePage }),
+  createRoute({ getParentRoute: () => root, path: '/planches', component: PlanchesPage }),
 ];
 
 // Historique par fragment (#/…) : l'app fonctionne hébergée n'importe où ou ouverte depuis le disque.

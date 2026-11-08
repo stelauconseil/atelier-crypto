@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode } from 'react';
 import { ADVANCED } from '../data/advanced';
-import { Num } from '../lib/icons';
+import { Fad, IC, Num } from '../lib/icons';
+import { PLANCHES, PLANCHE_FOR, planchesUrl } from '../data/planches';
 
 /** Mise en forme minimale : `code`, **gras**. */
 function inline(t: string): ReactNode[] {
@@ -37,6 +38,23 @@ export function Advanced({ id }: { id: string }) {
           <Body t={s.t} />
         </section>
       ))}
+      {(PLANCHE_FOR[id]?.length ?? 0) > 0 && (
+        <section className="adv-pdf">
+          <h3><Fad icon={IC.books} />Dans les planches du cours</h3>
+          <div className="pl-links">
+            {PLANCHE_FOR[id].map(([pid, n]) => {
+              const p = PLANCHES.find((x) => x.id === pid)!;
+              const g = p.pages[n - 1];
+              return (
+                <a key={`${pid}-${n}`} className="pl-link" href={`${planchesUrl(p.file)}#page=${n}`} target="_blank" rel="noopener">
+                  <img src={planchesUrl(g.thumb)} alt="" loading="lazy" />
+                  <span><b>{g.label} : {g.title}</b><span className="meta">{g.sections}</span><span className="pl-dl"><Fad icon={IC.pdf} />PDF, page {n}</span></span>
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

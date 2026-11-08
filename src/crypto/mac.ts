@@ -15,8 +15,8 @@ const K = new Uint32Array([
 export const IV = new Uint32Array([0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]);
 const rotr = (x: number, n: number) => (x >>> n) | (x << (32 - n));
 
-/** Fonction de compression f : état (8 mots) × bloc (64 octets) → nouvel état. */
-export function compress(state: Uint32Array, block: Bytes): Uint32Array {
+/** Fonction de compression f : état (8 mots) × bloc (64 octets) → nouvel état. `rounds` < 64 : version affaiblie, pour l'expérience. */
+export function compress(state: Uint32Array, block: Bytes, rounds = 64): Uint32Array {
   const w = new Uint32Array(64);
   for (let i = 0; i < 16; i++) w[i] = (block[4 * i] << 24) | (block[4 * i + 1] << 16) | (block[4 * i + 2] << 8) | block[4 * i + 3];
   for (let i = 16; i < 64; i++) {
@@ -25,7 +25,7 @@ export function compress(state: Uint32Array, block: Bytes): Uint32Array {
     w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
   }
   let [a, b, c, d, e, f, g, h] = state;
-  for (let i = 0; i < 64; i++) {
+  for (let i = 0; i < rounds; i++) {
     const t1 = (h + (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) + ((e & f) ^ (~e & g)) + K[i] + w[i]) | 0;
     const t2 = ((rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) | 0;
     h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
@@ -67,6 +67,14 @@ export function sha256From(state: Uint32Array, processed: number, data: Bytes): 
 }
 
 export const mySha256 = (m: Bytes) => sha256From(IV, 0, m);
+
+/** SHA-256 réduit à `rounds` tours par bloc (1 à 64) : sert à voir l'avalanche s'installer. */
+export function sha256Rounds(m: Bytes, rounds: number): Bytes {
+  const msg = concat(m, mdPadding(m.length));
+  let s: Uint32Array = IV;
+  for (let i = 0; i < msg.length; i += 64) s = compress(s, msg.slice(i, i + 64), rounds);
+  return stateBytes(s);
+}
 
 /** MAC naïf : SHA-256(K ‖ M). */
 export const naiveMac = (key: Bytes, m: Bytes) => sha256(concat(key, m));

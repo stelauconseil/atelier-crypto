@@ -34,6 +34,10 @@ describe('Diffie-Hellman', () => {
     expect(T).toHaveLength(11);
     expect(T.every((y) => isSquare(DH_GROUPS.toy, y))).toBe(true);
   });
+  it('jamais de valeur publique dégénérée, même avec une racine primitive (p = 47)', () => {
+    const G = DH_GROUPS.p47g26;
+    for (let i = 0; i < 500; i++) expect(dhCheck(G, dhPublic(G, dhSecret(G)))).toBeNull();
+  });
   it('petit sous-groupe : Y = p − 1 ou 1 refusé, sinon Z ∈ {1, p − 1}', () => {
     const G = DH_GROUPS.ffdhe2048;
     const a = dhSecret(G);

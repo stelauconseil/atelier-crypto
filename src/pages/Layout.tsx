@@ -3,6 +3,7 @@ import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { ALGOS, FAMILIES } from '../data/algos';
 import { usePalette } from '../lib/prefs';
+import { resetState } from '../lib/persist';
 
 export function Layout() {
   const [theme, setTheme] = useState<string>(() => {
@@ -26,6 +27,7 @@ export function Layout() {
         </Link>
         <nav className="nav">
           <Link to="/" activeOptions={{ exact: true }} activeProps={{ className: 'active' }}><span><Fad icon={IC.home} />Accueil</span></Link>
+          <Link to="/planches" activeProps={{ className: 'active' }}><span><Fad icon={IC.books} />Planches du cours (PDF)</span></Link>
           <Link to="/histoire" activeProps={{ className: 'active' }}><span><Fad icon={IC.history} />Histoire en frise</span></Link>
           <Link to="/notions" activeProps={{ className: 'active' }}><span><Fad icon={IC.notions} />Notions : MAC, anniversaires…</span></Link>
           <Link to="/palette" activeProps={{ className: 'active' }}><span><Fad icon={IC.palette} />Palette des octets</span></Link>
@@ -51,6 +53,9 @@ export function Layout() {
           </button>
           <button className="theme-btn" onClick={() => setPalette(palette === 'atelier' ? 'planches' : 'atelier')}>
             <Fad icon={IC.palette} />Palette : {palette === 'atelier' ? 'atelier' : 'planches PDF'}
+          </button>
+          <button className="theme-btn" title="Efface les clés, textes et réglages conservés dans ce navigateur pour toutes les pages" onClick={() => { if (window.confirm('Effacer l\'état conservé de toutes les pages (clés, textes, réglages) ?')) resetState('*'); }}>
+            <Fad icon={IC.trash} />Effacer l'état de toutes les pages
           </button>
         </div>
       </aside>

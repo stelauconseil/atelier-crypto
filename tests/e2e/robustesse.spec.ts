@@ -226,6 +226,88 @@ test.describe('robustesse des ateliers', () => {
     await noOverflow(page);
   });
 
+  test('Hachage : chaque page s\'exécute sans erreur ni débordement', async ({ page }) => {
+    await go(page, '/algo/sha256');
+    await page.locator('textarea').first().fill('x'.repeat(56));
+    await expect(page.getByText('2 blocs de 64 octets')).toBeVisible();
+    await page.locator('input[type=range]').first().fill('5');
+    await noOverflow(page);
+    await go(page, '/algo/sha3');
+    await page.click(".segctl button:has-text('SHAKE128')");
+    await noOverflow(page);
+    await go(page, '/algo/blake');
+    for (const v of ['BLAKE2s-256', 'BLAKE2b-512', 'BLAKE3']) {
+      await page.click(`.segctl button:has-text('${v}')`);
+      await expect(page.locator('.status').first()).toContainText(/conforme au vecteur officiel/);
+    }
+    await page.click("button:has-text('Clé aléatoire')");
+    await expect(page.locator('.bv').filter({ hasText: 'MAC' }).first()).toBeVisible();
+    await go(page, '/algo/hmac');
+    await expect(page.getByText('Identique au HMAC de la bibliothèque')).toBeVisible();
+    await expect(page.getByText('Falsification acceptée')).toBeVisible();
+    await page.locator('.card').filter({ hasText: 'Le destinataire vérifie' }).locator('input').fill('montant=900&dest=alice');
+    await expect(page.getByText('message rejeté')).toBeVisible();
+    await go(page, '/algo/hkdf');
+    await page.click(".segctl button:has-text('un mot de passe')");
+    await expect(page.getByText('HKDF est rapide')).toBeVisible();
+    await go(page, '/algo/pwhash');
+    await page.click(".segctl button:has-text('PBKDF2')");
+    await page.locator('label.f', { hasText: 'Itérations' }).locator('input').fill('2000');
+    await page.click("button:has-text('Dériver la clé')");
+    await expect(page.getByText('Ce que cela coûte à un attaquant')).toBeVisible({ timeout: 20000 });
+    await noOverflow(page);
+  });
+
+  test('Planches : page dédiée, vignettes et liens PDF, rappel dans « Pour aller plus loin »', async ({ page }) => {
+    await go(page, '/planches');
+    await expect(page.locator('.planche')).toHaveCount(2);
+    const hrefs = await page.locator('.planche a:has-text("Télécharger")').evaluateAll((as) => as.map((a) => a.getAttribute('href')));
+    expect(hrefs.every((h) => !!h && h.endsWith('.pdf'))).toBe(true);
+    const loaded = await page.locator('.pl-page img').evaluateAll(async (imgs) => {
+      (imgs as HTMLImageElement[]).forEach((i) => { i.loading = 'eager'; });
+      await Promise.all((imgs as HTMLImageElement[]).map((i) => (i.complete ? null : new Promise((r) => { i.onload = r; i.onerror = r; }))));
+      return (imgs as HTMLImageElement[]).filter((i) => i.naturalWidth > 0).length;
+    });
+    expect(loaded).toBe(8);
+    await go(page, '/algo/gcm');
+    await page.click(".main-tabs button:has-text('Pour aller plus loin')");
+    await expect(page.locator('.pl-link')).toHaveCount(3);
+    await noOverflow(page);
+  });
+
+  test('État conservé : texte et biclé survivent au rechargement, « Réinitialiser » les efface', async ({ page }) => {
+    await go(page, '/algo/sha256');
+    await page.locator('textarea').first().fill('conservé ?');
+    await page.reload();
+    await page.waitForTimeout(600);
+    await expect(page.locator('textarea').first()).toHaveValue('conservé ?');
+    await page.click("button:has-text('Réinitialiser la page')");
+    await expect(page.locator('textarea').first()).toHaveValue('abc');
+    await go(page, '/algo/ecdsa');
+    await expect(page.locator('.status').first()).toContainText(/Biclé générée/);
+    const pub1 = await page.locator('.bv').first().innerText();
+    await page.reload();
+    await page.waitForTimeout(1500);
+    await expect(page.locator('.status').first()).toContainText(/reprise de votre dernière visite/);
+    expect(await page.locator('.bv').first().innerText()).toBe(pub1);
+    await page.click("button.b-pri:has-text('Signer')");
+    await expect(page.locator('.jose')).toBeVisible();
+  });
+
+  test('Accueil : carrousel, un exemple par famille', async ({ page }) => {
+    await go(page, '/');
+    const dots = page.locator('.car-dots button');
+    await expect(dots).toHaveCount(5);
+    for (let i = 0; i < 5; i++) {
+      await dots.nth(i).click();
+      await page.waitForTimeout(300);
+      await expect(page.locator('.car-stage svg')).toBeVisible();
+    }
+    await page.locator('.carousel a.btn').click();
+    await expect(page.locator('.head h1')).toBeVisible();
+    await noOverflow(page);
+  });
+
   test('onglets « Pour aller plus loin » et « Le code »', async ({ page }) => {
     await go(page, '/algo/rsa-oaep');
     await page.click(".main-tabs button:has-text('Pour aller plus loin')");

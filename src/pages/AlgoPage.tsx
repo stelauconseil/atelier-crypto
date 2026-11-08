@@ -9,10 +9,13 @@ import { SymLab } from '../labs/SymLab';
 import { PkeLab } from '../labs/PkeLab';
 import { SigLab } from '../labs/SigLab';
 import { KexLab } from '../labs/KexLab';
+import { HashLab } from '../labs/HashLab';
+import { hasSaved, resetState, useResetNonce } from '../lib/persist';
 
 export function AlgoPage() {
   const { id } = useParams({ from: '/algo/$id' });
-  return <AlgoView key={id} id={id} />;
+  const nonce = useResetNonce(id);
+  return <AlgoView key={`${id}-${nonce}`} id={id} />;
 }
 
 function AlgoView({ id }: { id: string }) {
@@ -31,7 +34,12 @@ function AlgoView({ id }: { id: string }) {
           <div className="fam">{fam.label}</div>
           <h1><Fad icon={ALGO_ICON[a.id]} className="h-ico" />{a.name}<Pills a={a} /></h1>
         </div>
-        <div className="yr">{a.year}</div>
+        <div className="head-r">
+          <div className="yr">{a.year}</div>
+          <button className="btn b-ghost b-sm" title={hasSaved(id) ? 'Les réglages, textes et clés de cette page sont conservés dans ce navigateur' : 'Les réglages de cette page seront conservés dans ce navigateur'} onClick={() => resetState(id)}>
+            <Fad icon={IC.reset} />Réinitialiser la page
+          </button>
+        </div>
       </div>
       <div className="tabs main-tabs">
         <button className={tab === 'lab' ? 'on' : ''} onClick={() => setTab('lab')}><Fad icon={IC.lab} />Atelier</button>
@@ -43,6 +51,7 @@ function AlgoView({ id }: { id: string }) {
         <Recall a={a} />
         <div style={{ height: 14 }} />
         {a.family === 'sym' && <SymLab id={id} defaultText={a.defaultText} />}
+        {a.family === 'hash' && <HashLab id={id} />}
         {a.family === 'kex' && <KexLab id={id} />}
         {a.family === 'pke' && <PkeLab id={id} />}
         {a.family === 'sig' && <SigLab id={id} />}

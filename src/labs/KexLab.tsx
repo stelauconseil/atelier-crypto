@@ -13,6 +13,9 @@ import { ByteView, EncodingToggle, type Encoding } from '../components/ByteView'
 import { Card, Pipeline, Status } from '../components/ui';
 import { errText } from './common';
 import { CELL_LABEL, DH_USES, type Cell } from '../data/dhUses';
+import { usePersisted, z, zBytes } from '../lib/persist';
+
+const zPair = z.object({ priv: zBytes, pub: zBytes });
 
 type St = { kind: 'ok' | 'ko' | 'info'; text: string } | null;
 const short = (b: Uint8Array, n = 6) => toHex(b.slice(0, n)) + '…';
@@ -54,12 +57,12 @@ function genNote(G: DhGroup): string {
 function DhLab() {
   // Groupe et secrets dans un même état : un changement de groupe ne peut pas laisser des secrets de l'ancien.
   const fresh = (gid: Gid) => { const G = DH_GROUPS[gid]; return { gid, a: dhSecret(G), b: dhSecret(G) }; };
-  const [k, setK] = useState(() => fresh('toy'));
+  const [k, setK] = usePersisted('dh', 'secrets', () => fresh('toy'), z.object({ gid: z.string().refine((g) => g in DH_GROUPS), a: z.bigint(), b: z.bigint() }));
   const gid = k.gid;
   const G = DH_GROUPS[gid];
   const small = G.bytes === 1;
   const [attack, setAttack] = useState<Attack>('none');
-  const [validate, setValidate] = useState(true);
+  const [validate, setValidate] = usePersisted('dh', 'validate', true, z.boolean());
   const [run, setRun] = useState(0);
   const [enc, setEnc] = useState<Encoding>('hex');
   const changeGroup = (g: Gid) => { setK(fresh(g)); setAttack('none'); setRun(0); };
@@ -168,8 +171,8 @@ type EcAttack = 'none' | 'flip' | 'zero' | 'one';
 function EcLab({ curve }: { curve: 'ecdh' | 'x25519' }) {
   const isX = curve === 'x25519';
   const gen = () => (isX ? xPair() : p256Pair());
-  const [a, setA] = useState(gen);
-  const [b, setB] = useState(gen);
+  const [a, setA] = usePersisted(curve, 'alice', gen, zPair);
+  const [b, setB] = usePersisted(curve, 'bob', gen, zPair);
   const [attack, setAttack] = useState<EcAttack>('none');
   const [run, setRun] = useState(0);
   const [enc, setEnc] = useState<Encoding>('hex');
@@ -251,10 +254,11 @@ const PROPS: Record<string, { fresh: string; fs: string; auth: string; ex: strin
 };
 
 function GridLab() {
-  const [parties] = useState(() => ({ A: { name: 'Alice', static: xPair() }, B: { name: 'Bob', static: xPair() } }));
-  const [modeA, setModeA] = useState<Mode>('e');
-  const [modeB, setModeB] = useState<Mode>('s');
-  const [nonces, setNonces] = useState(false);
+  const zParty = z.object({ name: z.string(), static: zPair });
+  const [parties] = usePersisted('kex-grid', 'statics', () => ({ A: { name: 'Alice', static: xPair() }, B: { name: 'Bob', static: xPair() } }), z.object({ A: zParty, B: zParty }));
+  const [modeA, setModeA] = usePersisted<Mode>('kex-grid', 'modeA', 'e', z.enum(['s', 'e']));
+  const [modeB, setModeB] = usePersisted<Mode>('kex-grid', 'modeB', 's', z.enum(['s', 'e']));
+  const [nonces, setNonces] = usePersisted('kex-grid', 'nonces', false, z.boolean());
   const [sessions, setSessions] = useState<GridSession[]>([]);
   const [leak, setLeak] = useState<'none' | 'A' | 'B'>('none');
   const [filter, setFilter] = useState<Cell | 'all'>('all');
@@ -356,9 +360,10 @@ function GridLab() {
 
 // ================================================================ SIGMA
 function SigmaLab() {
-  const [ids, setIds] = useState(() => ({ A: { name: 'Alice', sign: edPair() }, B: { name: 'Bob', sign: edPair() } }));
-  const [auth, setAuth] = useState(false);
-  const [mitm, setMitm] = useState(true);
+  const zId = z.object({ name: z.string(), sign: zPair });
+  const [ids, setIds] = usePersisted('sigma', 'identities', () => ({ A: { name: 'Alice', sign: edPair() }, B: { name: 'Bob', sign: edPair() } }), z.object({ A: zId, B: zId }));
+  const [auth, setAuth] = usePersisted('sigma', 'auth', false, z.boolean());
+  const [mitm, setMitm] = usePersisted('sigma', 'mitm', true, z.boolean());
   const [r, setR] = useState<SigmaRun | null>(null);
   const [run, setRun] = useState(0);
   const [enc, setEnc] = useState<Encoding>('hex');
@@ -429,9 +434,9 @@ const DG1 = 'P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<L898902C36UTO7408122F12
 type ChipKind = 'genuine' | 'clone' | 'swap';
 
 function ChipLab() {
-  const [iss, setIss] = useState<Issuer>(issuerNew);
-  const [chip, setChip] = useState<Chip>(() => personalize(iss));
-  const [kind, setKind] = useState<ChipKind>('genuine');
+  const [iss, setIss] = usePersisted<Issuer>('chip-auth', 'issuer', issuerNew, z.object({ dsPriv: zBytes, dsPub: zBytes }));
+  const [chip, setChip] = usePersisted<Chip>('chip-auth', 'chip', () => personalize(iss), z.object({ caPriv: zBytes, dg14: zBytes, sod: z.object({ dg14Hash: zBytes, sig: zBytes }) }));
+  const [kind, setKind] = usePersisted<ChipKind>('chip-auth', 'kind', 'genuine', z.enum(['genuine', 'clone', 'swap']));
   const [r, setR] = useState<CaRun | null>(null);
   const [run, setRun] = useState(0);
   const [enc, setEnc] = useState<Encoding>('hex');

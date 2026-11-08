@@ -297,4 +297,61 @@ Le DH n'a donc **pas** lieu à chaque message : une rafale de messages dans le m
 
 Dans Signal, l'en-tête est lui-même chiffré (header encryption) et le secret initial vient de **X3DH** (quatre DH : IK_A×SPK_B, EK_A×IK_B, EK_A×SPK_B, EK_A×OPK_B), remplacé en 2023 par **PQXDH**, qui ajoute une encapsulation ML-KEM. En octobre 2025, Signal a ajouté un cliquet post-quantique, SPQR (fondé sur ML-KEM-768), dont la sortie est mélangée à celle du Double Ratchet par une KDF : c'est le « Triple Ratchet ».` },
   ],
+  // ------------------------------------------------------------------ hachage, MAC et dérivation
+  sha256: [
+    { h: 'Trois résistances, trois coûts', t: `- **Préimage** : retrouver un M de haché donné, ≈ 2²⁵⁶ essais.
+- **Seconde préimage** : trouver M′ ≠ M de même haché qu'un M imposé, ≈ 2²⁵⁶.
+- **Collision** : trouver deux messages quelconques de même haché, ≈ 2¹²⁸ seulement, par le paradoxe des anniversaires (voir « Notions »).
+
+C'est la collision qui a fait tomber MD5 (2004) et SHA-1 (2017) : deux documents de même empreinte, l'un anodin, l'autre signé à sa place.` },
+    { h: 'Merkle-Damgård et ses conséquences', t: `Le message est bourré (\`0x80\`, des zéros, la longueur sur 64 bits), découpé en blocs de 64 octets, puis une **fonction de compression** f enchaîne : \`Hᵢ = f(Hᵢ₋₁, Mᵢ)\`. La longueur dans le bourrage (« renforcement de Merkle-Damgård ») garantit qu'une collision sur le haché donne une collision sur f.
+
+Le revers : le haché publié **est** l'état interne. Qui connaît \`SHA-256(K ‖ M)\` et la longueur de K peut continuer le calcul : c'est l'**extension de longueur** (page HMAC). SHA-512/256, tronqué, et SHA-3 n'ont pas ce défaut.` },
+    { h: 'L\'expérience des tours', t: `L'atelier exécute une fonction de compression écrite à la main, ce qui permet de l'arrêter après r tours. On voit l'avalanche s'installer, et sa vitesse dépend de l'endroit du bit modifié : un bit du premier mot de message (w₀) est diffusé en quelques tours, alors qu'un bit du mot w₁₃ n'entre dans le calcul qu'au quatorzième tour, et l'avalanche n'est complète qu'au-delà. SHA-256 en fait 64. Les meilleures attaques sur SHA-256 réduit atteignent environ 31 tours pour les collisions (pratiques en dessous), ce qui laisse une marge confortable, mais c'est bien de **marge** qu'il s'agit : l'avalanche visible ne prouve rien à elle seule.` },
+  ],
+  sha3: [
+    { h: 'L\'éponge', t: `Keccak manipule un état de 1 600 bits (5 × 5 mots de 64 bits), séparé en deux : le **débit** r, où l'on absorbe le message par blocs puis d'où l'on essore la sortie, et la **capacité** c, jamais exposée. La sécurité générique est de c/2 bits : SHA3-256 prend c = 512, d'où 256 bits de résistance aux préimages et 128 aux collisions.
+
+Chaque absorption est suivie de **Keccak-f**, 24 tours de cinq étapes (θ, ρ, π, χ, ι), une permutation publique : pas de clé, pas de fonction de compression.` },
+    { h: 'XOF, KMAC et famille', t: `- **SHAKE128 / SHAKE256** : longueur de sortie libre (XOF). ML-KEM et ML-DSA s'en servent pour dériver matrices et aléas.
+- **cSHAKE, KMAC, TupleHash, ParallelHash** (SP 800-185) : variantes à personnalisation ; KMAC est un MAC direct, sans la construction HMAC.
+- **KangarooTwelve** : les concepteurs eux-mêmes ramènent Keccak à 12 tours pour la vitesse.` },
+    { h: 'Keccak-256 n\'est pas SHA3-256', t: `Le NIST a modifié le bourrage entre la soumission (2011) et la norme (2015) pour séparer les usages : l'octet de domaine vaut \`0x06\` pour SHA-3, \`0x1F\` pour SHAKE, \`0x01\` dans le Keccak d'origine. Ethereum, lancé entre les deux, a gardé l'original : sa fonction \`keccak256\` ne donne pas SHA3-256. Un seul octet d'écart suffit à rendre les deux sorties sans rapport.` },
+  ],
+  blake: [
+    { h: 'Une famille, trois générations', t: `- **BLAKE** (2008) : Jean-Philippe Aumasson, Luca Henzen, Willi Meier et Raphael Phan le soumettent à la compétition SHA-3 (51 candidats). Il atteint la finale, que Keccak remporte en 2012.
+- **BLAKE2** (2012) : Aumasson, Samuel Neves, Zooko Wilcox-O'Hearn et Christian Winnerlein le simplifient et l'allègent (BLAKE2b : 12 tours au lieu de 16, BLAKE2s : 10 au lieu de 14). Il devient le hachage rapide de référence hors du NIST (RFC 7693).
+- **BLAKE3** (2020) : Jack O'Connor, Aumasson, Neves et Wilcox-O'Hearn. 7 tours, un arbre de Merkle de blocs de 1 Kio (parallélisme, vérification en flux), XOF, modes « clé » et « dérivation » intégrés.` },
+    { h: 'La coquille devenue constante', t: `Le cœur de BLAKE est le quart de tour de **ChaCha** (Bernstein) : additions, rotations, XOR. Deux différences : les mots du message y sont injectés, et le sens des rotations est inversé. On a parfois cherché à cette inversion une raison savante ; Aumasson raconte dans son *Crypto Dictionary* (2021) qu'elle vient tout simplement d'une **coquille** dans la spécification d'origine de BLAKE, conservée ensuite dans BLAKE2 et BLAKE3.` },
+    { h: '« Too Much Crypto »', t: `Dans cet article de 2019, présenté à Real World Crypto 2020, Aumasson soutient que la plupart des primitives symétriques font **plus de tours que nécessaire** : la cryptanalyse progresse peu depuis des décennies, les marges sont incohérentes d'une primitive à l'autre, et ces tours inutiles coûtent du temps et de l'énergie. Il propose : AES-128 à 9 tours (au lieu de 10), BLAKE2b à 8 (12), BLAKE2s à 7 (10), ChaCha à 8 (20), SHA-3 à 10 (24).
+
+Son bilan de 2025 : aucune de ces versions réduites n'a été cassée ; la meilleure attaque pratique sur AES plafonne à 6 tours, sur SHA-3 à 5. BLAKE3 applique l'idée avec 7 tours. Les organismes de normalisation, eux, n'ont rien changé, et l'idée reste discutée : Bernstein, par exemple, juge ChaCha8 trop risqué.` },
+    { h: 'Avant d\'avoir cassé AES par force brute', t: `L'argument repose sur une distinction : la sécurité ne se joue pas contre la recherche exhaustive, qui est hors de portée, mais contre la cryptanalyse. Un ordre de grandeur : 2¹²⁸ ≈ 3,4 × 10³⁸ clés pour AES-128. À 10¹⁸ clés testées par seconde (bien au-delà de toute machine existante), il faut en moyenne 1,7 × 10²⁰ secondes, soit environ 5 × 10¹² ans, quelque 400 fois l'âge de l'Univers. Le Soleil sera éteint bien avant.
+
+D'où la boutade qu'on prête volontiers à Aumasson : l'espèce humaine aura disparu avant que quiconque ne déchiffre de l'AES par force brute. La vraie question est donc la marge face aux attaques structurelles, et c'est elle que « Too Much Crypto » propose de recalibrer.` },
+  ],
+  hmac: [
+    { h: 'La construction', t: `\`HMAC(K, M) = H((K₀ ⊕ opad) ‖ H((K₀ ⊕ ipad) ‖ M))\`, où K₀ est la clé complétée par des zéros jusqu'à la taille de bloc B (64 octets pour SHA-256), ou d'abord hachée si elle dépasse B. \`ipad\` est l'octet 0x36 répété, \`opad\` l'octet 0x5c.
+
+Les deux constantes diffèrent pour que les clés intérieure et extérieure soient distinctes. Les deux premiers blocs (K₀ ⊕ ipad et K₀ ⊕ opad) ne dépendent que de la clé : les implémentations les précalculent une fois.` },
+    { h: 'Ce que dit la preuve', t: `Bellare, Canetti et Krawczyk (1996) montrent que HMAC est une fonction pseudo-aléatoire si la compression l'est. Bellare (2006) affaiblit l'hypothèse : il suffit que la compression soit une PRF, la **résistance aux collisions n'est pas requise**. C'est pourquoi HMAC-MD5 et HMAC-SHA-1 ne sont pas cassés en tant que MAC, même si l'on n'a plus de raison de les choisir.` },
+    { h: 'Bien s\'en servir', t: `- **Comparer en temps constant** : un \`==\` qui s'arrête au premier octet différent laisse mesurer combien d'octets sont justes, et forger le tag octet par octet.
+- **Tronquer avec prudence** : 128 bits au moins en général ; TLS 1.2 n'en garde que 96 dans le message Finished, protégé par le reste du protocole.
+- **Une clé par usage** : dérivez-les avec HKDF plutôt que de réutiliser la même clé pour chiffrer et authentifier.
+- Avec SHA-3 ou BLAKE2, HMAC n'est plus nécessaire : KMAC et le mode à clé de BLAKE2 font un MAC directement.` },
+  ],
+  hkdf: [
+    { h: 'Pourquoi deux étapes', t: `Un secret d'échange de clés (Z d'un ECDH, sortie de ML-KEM) n'est pas uniforme : c'est l'abscisse d'un point, une valeur structurée. **Extract** concentre son entropie en une clé pseudo-aléatoire PRK de 32 octets. **Expand** en tire autant d'octets que voulu, en les liant à \`info\` : version du protocole, rôle, usage. Quand l'IKM est déjà uniforme (une clé maître aléatoire), on peut ne faire qu'Expand.` },
+    { h: 'Le sel', t: `Le sel est public et facultatif ; il renforce l'extraction quand l'IKM a peu d'entropie ou peut être influencé par un attaquant, et sépare les instances. Sans sel, HKDF utilise 32 octets nuls. Dans TLS 1.3, le sel de chaque étape est la clé dérivée de l'étape précédente : la planification des clés est une chaîne d'Extract et d'Expand (Derive-Secret, HKDF-Expand-Label).` },
+    { h: 'Où on la retrouve dans l\'atelier', t: `HPKE (KeySchedule), le Double Ratchet (KDF_RK), les clés de session de la grille statique / éphémère, la dérivation d'ECIES « propre ». À l'inverse, la Concat KDF de JOSE et la KDF X9.63 d'Apple sont des cousines plus simples, à un seul étage, fondées sur un haché plutôt que sur HMAC.` },
+  ],
+  pwhash: [
+    { h: 'Ralentir l\'attaquant, pas l\'utilisateur', t: `Un mot de passe humain a peu d'entropie : 20 à 40 bits pour la plupart. Si sa base de hachés fuit, l'attaquant essaie des dictionnaires hors ligne, à la vitesse de son matériel. On ne peut pas augmenter l'entropie ; on augmente le **coût de chaque essai**. Une connexion légitime paie ce coût une fois ; l'attaquant, des milliards de fois.
+
+Le **sel**, unique par compte, empêche les tables précalculées (arc-en-ciel) et oblige à attaquer chaque compte séparément.` },
+    { h: 'Temps ou mémoire', t: `- **PBKDF2** répète HMAC. Il ne demande presque pas de mémoire : un GPU fait des millions d'essais par seconde, en parallèle. OWASP recommande 600 000 itérations avec SHA-256.
+- **scrypt** (Percival 2009) remplit un grand tableau puis le relit dans un ordre qui dépend des données : la mémoire devient le facteur limitant.
+- **Argon2id** (Biryukov, Dinu, Khovratovich), lauréat de la Password Hashing Competition en 2015, normalisé en 2021 (RFC 9106) : paramètres séparés pour la mémoire, le temps et le parallélisme ; la variante « id » combine la résistance aux canaux auxiliaires et aux compromis temps-mémoire. Il utilise BLAKE2b en interne.` },
+    { h: 'Choisir ses paramètres', t: `Partir du temps acceptable côté serveur (quelques centaines de millisecondes), puis monter la mémoire aussi haut que le serveur le permet. Point de départ OWASP pour Argon2id : 19 Mio, 2 passes, 1 fil. Les paramètres sont stockés avec le haché (format \`$argon2id$v=19$m=19456,t=2,p=1$sel$haché\`) : on peut les relever plus tard et re-hacher à la connexion suivante.` },
+  ],
 };

@@ -1,4 +1,4 @@
-export type Family = 'sym' | 'kex' | 'pke' | 'sig';
+export type Family = 'sym' | 'hash' | 'kex' | 'pke' | 'sig';
 export type PillTone = 'ok' | 'mid' | 'ko' | 'pq' | 'nt';
 
 export interface AlgoInfo {
@@ -19,6 +19,7 @@ export interface AlgoInfo {
 
 export const FAMILIES: { id: Family; label: string; sub: string }[] = [
   { id: 'sym', label: 'Chiffrement symétrique', sub: 'AES et ses modes, AEAD' },
+  { id: 'hash', label: 'Hachage, MAC et dérivation', sub: 'Empreintes, authentification, clés dérivées' },
   { id: 'kex', label: 'Établissement de clé', sub: 'Diffie-Hellman, statique ou éphémère' },
   { id: 'pke', label: 'Chiffrement asymétrique', sub: 'Du transport de clé au KEM' },
   { id: 'sig', label: 'Signatures', sub: 'De PKCS#1 v1.5 à SLH-DSA' },
@@ -135,6 +136,55 @@ export const ALGOS: AlgoInfo[] = [
     points: ['Ordre normalisé pour TLS : la partie ML-KEM d\'abord, puis X25519.', 'Protège dès aujourd\'hui contre « harvest now, decrypt later ».', 'X-Wing (projet IETF) combine autrement, avec SHA3-256 et une étiquette.'],
     formula: 'ss = ss_ML-KEM ‖ ss_X25519',
     where: 'TLS 1.3 par défaut dans les navigateurs.', refs: 'draft-ietf-tls-ecdhe-mlkem',
+  },
+  // ------------------------------------------------------------------ hachage, MAC et dérivation
+  {
+    id: 'sha256', family: 'hash', name: 'SHA-256 (SHA-2)', short: 'SHA-256', year: '2001', status: [['OK', 'ok']],
+    lead: 'Résume un message de taille quelconque en 32 octets. Construction de Merkle-Damgård : le message est bourré, découpé en blocs de 64 octets, et une fonction de compression enchaîne un état de 256 bits.',
+    points: ['Trois propriétés : sens unique (préimage), seconde préimage, collisions introuvables (≈ 2¹²⁸ essais par anniversaire).', 'Effet avalanche : un bit modifié en entrée change environ la moitié des 256 bits de sortie.', 'Le haché publié est l\'état interne final : d\'où l\'extension de longueur, qui interdit d\'utiliser SHA-256(K ‖ M) comme MAC.'],
+    formula: 'H₀ = IV ;  Hᵢ = f(Hᵢ₋₁, Mᵢ) ;  SHA-256(M) = H_n  (M bourré : 0x80, zéros, longueur sur 64 bits)',
+    pitfalls: ['Tapez 55 puis 56 caractères : le bourrage déborde sur un second bloc. Puis faites varier le nombre de tours de la compression.'],
+    where: 'Partout : certificats X.509, TLS, signatures, Bitcoin, Git (en migration depuis SHA-1), sous-ressources Web.', refs: 'FIPS 180-4',
+  },
+  {
+    id: 'sha3', family: 'hash', name: 'SHA-3 (Keccak) et SHAKE', short: 'SHA-3', year: '2012 · 2015', status: [['OK', 'ok']],
+    lead: 'Une construction en éponge : on absorbe le message dans un grand état de 1 600 bits, puis on en essore autant d\'octets que voulu. Une partie de l\'état, la capacité, n\'est jamais publiée.',
+    points: ['Lauréat de la compétition NIST (2007-2012) contre BLAKE, Grøstl, JH et Skein ; normalisé en 2015 (FIPS 202).', 'Pas d\'extension de longueur : la capacité cachée empêche de reprendre le calcul à partir du haché.', 'SHAKE128 / SHAKE256 sont des XOF : la longueur de sortie est libre. Keccak-256 d\'Ethereum diffère de SHA3-256 par un seul octet de bourrage.'],
+    formula: 'état 1 600 bits = débit r ‖ capacité c ;  SHA3-256 : r = 1 088, c = 512 ;  24 tours de Keccak-f',
+    pitfalls: ['Comparez SHA3-256 et Keccak-256 sur le même message : tout diffère, à cause du seul octet de séparation de domaine.'],
+    where: 'ML-KEM et ML-DSA (SHAKE), Ethereum (Keccak-256), KMAC, cSHAKE, TupleHash.', refs: 'FIPS 202 · SP 800-185',
+  },
+  {
+    id: 'blake', family: 'hash', name: 'BLAKE2 et BLAKE3', short: 'BLAKE2 / 3', year: '2012 · 2020', status: [['OK', 'ok']],
+    lead: 'Finaliste de SHA-3 devenu, avec BLAKE2 puis BLAKE3, le hachage rapide de référence hors des normes NIST. Jean-Philippe Aumasson est de toutes les versions.',
+    points: ['BLAKE2 (2012) : plus rapide que MD5, avec un mode à clé natif (MAC sans HMAC). BLAKE2b (64 bits, 12 tours), BLAKE2s (32 bits, 10 tours).', 'BLAKE3 (2020) : 7 tours seulement, arbre de Merkle pour paralléliser, XOF, modes clé et dérivation intégrés.', 'Son cœur est le quart de tour de ChaCha (Bernstein) : additions, rotations, XOR (ARX).'],
+    formula: 'BLAKE2b(M, clé) ;  BLAKE3 : arbre de blocs de 1 Kio, compression = 7 tours de G (ARX)',
+    pitfalls: ['Hachez la chaîne vide avec les trois variantes et comparez aux vecteurs officiels, puis ajoutez une clé : BLAKE2 devient un MAC.'],
+    where: 'Argon2 (BLAKE2b), WireGuard et le RNG de Linux (BLAKE2s), Zcash, b2sum ; BLAKE3 dans Bazel, OpenZFS, Cargo, LLVM.', refs: 'RFC 7693 · blake3.io',
+  },
+  {
+    id: 'hmac', family: 'hash', name: 'HMAC', short: 'HMAC', year: '1996', status: [['OK', 'ok']],
+    lead: 'Transforme une fonction de hachage en MAC : deux hachés imbriqués, la clé masquée par deux constantes. Le haché extérieur cache l\'état intérieur et ferme la porte à l\'extension de longueur.',
+    points: ['HMAC(K, M) = H((K₀ ⊕ opad) ‖ H((K₀ ⊕ ipad) ‖ M)), avec ipad = 0x36…, opad = 0x5c…', 'K₀ : la clé complétée par des zéros jusqu\'à la taille de bloc (64 o pour SHA-256), ou hachée si elle est plus longue.', 'Sa preuve n\'exige pas la résistance aux collisions (Bellare 2006) : HMAC-MD5 n\'est pas cassé comme MAC. Sert aussi de PRF dans HKDF, PBKDF2, TLS.'],
+    formula: 'HMAC(K, M) = H((K₀ ⊕ opad) ‖ H((K₀ ⊕ ipad) ‖ M))',
+    pitfalls: ['Lancez l\'extension de longueur : elle réussit contre SHA-256(K ‖ M) et échoue contre HMAC.'],
+    where: 'JWT HS256, TLS (PRF de TLS 1.2, HKDF de 1.3), IPsec, API signées (AWS SigV4), TOTP / HOTP.', refs: 'RFC 2104 · FIPS 198-1',
+  },
+  {
+    id: 'hkdf', family: 'hash', name: 'HKDF (dérivation de clé)', short: 'HKDF', year: '2010', status: [['OK', 'ok']],
+    lead: 'Tire d\'un secret plus ou moins uniforme (sortie DH, clé maître) autant de clés indépendantes que nécessaire. Deux temps : extraire l\'aléa, puis l\'étendre en le liant à un contexte.',
+    points: ['Extract : PRK = HMAC(sel, IKM) concentre l\'entropie de l\'IKM en 32 octets uniformes.', 'Expand : T(i) = HMAC(PRK, T(i−1) ‖ info ‖ i) ; un `info` différent donne des clés indépendantes (chiffrement, MAC, IV…).', 'Pas fait pour les mots de passe : il est rapide, donc rapide à attaquer par dictionnaire.'],
+    formula: 'PRK = HMAC(sel, IKM) ;  OKM = T(1) ‖ T(2) ‖ … tronqué à L,  T(i) = HMAC(PRK, T(i−1) ‖ info ‖ i)',
+    pitfalls: ['Gardez le même IKM et changez seulement `info` : les clés obtenues n\'ont plus rien en commun.'],
+    where: 'TLS 1.3, HPKE, Signal (Double Ratchet), Noise, WireGuard, MLS, QUIC.', refs: 'RFC 5869 · SP 800-56C',
+  },
+  {
+    id: 'pwhash', family: 'hash', name: 'Mots de passe : PBKDF2, scrypt, Argon2', short: 'PBKDF2 / Argon2', year: '2000 · 2015', status: [['Argon2id recommandé', 'ok'], ['PBKDF2 toléré', 'mid']],
+    lead: 'Un mot de passe a peu d\'entropie : on le dérive avec une fonction volontairement lente (et gourmande en mémoire) pour que chaque essai d\'un attaquant coûte cher. Le sel empêche les tables précalculées.',
+    points: ['PBKDF2 : HMAC itéré (600 000 fois recommandé pour SHA-256) ; lent, mais pas de mémoire, donc facile sur GPU.', 'scrypt (2009) et Argon2id (lauréat PHC 2015, RFC 9106) : difficiles en mémoire, ce qui pénalise GPU et ASIC.', 'Paramètres de référence OWASP pour Argon2id : 19 Mio de mémoire, 2 passes, 1 fil.'],
+    formula: 'K = Argon2id(mot de passe, sel, m = 19 Mio, t = 2, p = 1)',
+    pitfalls: ['Mesurez le temps d\'une dérivation, puis regardez ce que cela coûte à un attaquant pour un dictionnaire d\'un milliard de mots.'],
+    where: 'Stockage des mots de passe, coffres-forts (Bitwarden, 1Password), chiffrement de disque (LUKS2), portefeuilles.', refs: 'RFC 8018 · RFC 7914 · RFC 9106',
   },
   // ------------------------------------------------------------------ établissement de clé
   {

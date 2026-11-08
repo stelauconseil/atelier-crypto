@@ -9,6 +9,7 @@ import { Card, FormatTabs, Pipeline, Status, useBusy } from '../components/ui';
 import { errText, tamper } from './common';
 import { JweView } from '../components/JweView';
 import { JWE } from '../crypto/jwe';
+import { isKeyPair, loadValue, saveValue, usePersisted, z } from '../lib/persist';
 
 type St = { kind: 'ok' | 'ko' | 'info'; text: string } | null;
 
@@ -17,7 +18,7 @@ export function PkeLab({ id }: { id: string }) {
   const [keys, setKeys] = useState<any>(null);
   const [pub, setPub] = useState<View[]>([]);
   const [priv, setPriv] = useState<View[]>([]);
-  const [pt, setPt] = useState('Clé de session : 7f3a…, à utiliser avant vendredi.');
+  const [pt, setPt] = usePersisted(id, 'pt', 'Clé de session : 7f3a…, à utiliser avant vendredi.', z.string());
   const [wire, setWire] = useState<Seg[] | null>(null);
   const [prevWire, setPrevWire] = useState<string | null>(null);
   const [inside, setInside] = useState<View[]>([]);
@@ -36,9 +37,21 @@ export function PkeLab({ id }: { id: string }) {
     setKeys(r.keys); setPub(r.pub); setPriv(r.priv);
     setWire(null); setResult(null); setSt2(null); setPrevWire(null);
     setSt({ kind: 'info', text: `Biclé générée en ${(performance.now() - t).toFixed(0)} ms.` });
+    saveValue(id, 'keypair', r);
   });
 
-  useEffect(() => { void keygen(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Biclé de la dernière visite si elle existe, sinon une nouvelle.
+  useEffect(() => {
+    let live = true;
+    void loadValue(id, 'keypair').then((r) => {
+      if (!live) return;
+      if (isKeyPair(r)) {
+        setKeys(r.keys); setPub(r.pub as View[]); setPriv(r.priv as View[]);
+        setSt({ kind: 'info', text: 'Biclé reprise de votre dernière visite (« Nouvelle biclé » pour en tirer une autre).' });
+      } else void keygen();
+    });
+    return () => { live = false; };
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const encrypt = wrap('enc', async () => {
     setSt2(null); setResult(null); setOutInside([]);

@@ -5,6 +5,8 @@ import pkeSrc from '../crypto/pke.ts?raw';
 import sigSrc from '../crypto/sig.ts?raw';
 import kexSrc from '../crypto/kex.ts?raw';
 import kdfSrc from '../crypto/kdf.ts?raw';
+import hashSrc from '../crypto/hash.ts?raw';
+import macSrc from '../crypto/mac.ts?raw';
 import bytesSrc from '../lib/bytes.ts?raw';
 
 export const SOURCES: Record<string, string> = {
@@ -13,6 +15,8 @@ export const SOURCES: Record<string, string> = {
   'src/crypto/sig.ts': sigSrc,
   'src/crypto/kex.ts': kexSrc,
   'src/crypto/kdf.ts': kdfSrc,
+  'src/crypto/hash.ts': hashSrc,
+  'src/crypto/mac.ts': macSrc,
   'src/lib/bytes.ts': bytesSrc,
 };
 
@@ -47,6 +51,8 @@ const G = 'src/crypto/sig.ts';
 const K = 'src/crypto/kdf.ts';
 const B = 'src/lib/bytes.ts';
 const X = 'src/crypto/kex.ts';
+const HS = 'src/crypto/hash.ts';
+const MC = 'src/crypto/mac.ts';
 
 /** Pour chaque algorithme : les déclarations à montrer, dans l'ordre de lecture. */
 export const CODE: Record<string, [string, string][]> = {
@@ -71,6 +77,12 @@ export const CODE: Record<string, [string, string][]> = {
   ed25519: [[G, 'ED25519']],
   mldsa: [[G, 'MLDSA']],
   slhdsa: [[G, 'SLH'], [G, 'SLHDSA']],
+  sha256: [[MC, 'compress'], [MC, 'mdPadding'], [MC, 'sha256Rounds'], [HS, 'bitDiff'], [HS, 'avalancheByRounds']],
+  sha3: [[HS, 'HASHES']],
+  blake: [[HS, 'HASHES'], [HS, 'TOO_MUCH']],
+  hmac: [[HS, 'hmacParts'], [MC, 'naiveMac'], [MC, 'lengthExtend']],
+  hkdf: [[HS, 'hkdfSteps']],
+  pwhash: [[HS, 'pwMemory'], [HS, 'pwHash'], [HS, 'PW_DEFAULTS']],
   dh: [[X, 'DH_GROUPS'], [X, 'dhSecret'], [X, 'dhPublic'], [X, 'dhCheck'], [X, 'dhShared'], [B, 'modPow']],
   ecdh: [[X, 'p256Pair'], [X, 'ecdhP256'], [X, 'compressP256']],
   x25519: [[X, 'clamp'], [X, 'xPair'], [X, 'xdh'], [X, 'LOW_ORDER']],

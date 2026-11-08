@@ -6,16 +6,18 @@ import { seg, type Seg, type View } from '../crypto/types';
 import { ByteView, EncodingToggle, type Encoding } from '../components/ByteView';
 import { Card, Pipeline, Status } from '../components/ui';
 import { errText, tamper } from './common';
+import { usePersisted, z } from '../lib/persist';
 
 type St = { kind: 'ok' | 'ko' | 'info'; text: string } | null;
 
 export function SymLab({ id, defaultText }: { id: string; defaultText?: string }) {
   const A = SYM[id];
-  const [keyLen, setKeyLen] = useState(A.keyLens.includes(16) ? 16 : A.keyLens[0]);
-  const [keyHex, setKeyHex] = useState(() => toHex(rand(keyLen)));
-  const [nonceHex, setNonceHex] = useState(() => (A.nonceLen ? toHex(rand(A.nonceLen)) : ''));
-  const [aad, setAad] = useState('en-tête : version=1, destinataire=bob');
-  const [pt, setPt] = useState(A.hexPlaintext ? toHex(rand(32)) : (defaultText ?? 'Rendez-vous à 14 h, salle 42. Apportez la clé.'));
+  const len0 = A.keyLens.includes(16) ? 16 : A.keyLens[0];
+  const [keyLen, setKeyLen] = usePersisted(id, 'keyLen', len0, z.number().int().refine((n) => A.keyLens.includes(n)));
+  const [keyHex, setKeyHex] = usePersisted(id, 'key', () => toHex(rand(len0)), z.string());
+  const [nonceHex, setNonceHex] = usePersisted(id, 'nonce', () => (A.nonceLen ? toHex(rand(A.nonceLen)) : ''), z.string());
+  const [aad, setAad] = usePersisted(id, 'aad', 'en-tête : version=1, destinataire=bob', z.string());
+  const [pt, setPt] = usePersisted(id, 'pt', () => (A.hexPlaintext ? toHex(rand(32)) : (defaultText ?? 'Rendez-vous à 14 h, salle 42. Apportez la clé.')), z.string());
   const [wire, setWire] = useState<Seg[] | null>(null);
   const [inside, setInside] = useState<View[]>([]);
   const [outInside, setOutInside] = useState<View[]>([]);
