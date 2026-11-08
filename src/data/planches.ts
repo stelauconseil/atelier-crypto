@@ -41,8 +41,8 @@ export const PLANCHES: Planche[] = [
     file: 'planche-aes-permutations-v2.pdf',
     title: 'AES, permutations et pseudo-aléa',
     sub: 'Feuille F3 : ce que veut dire « AES est une permutation », masque jetable, anniversaires',
-    version: 'v2 · novembre 2026',
-    size: '470 Ko',
+    version: 'v2 stabilisée · 8 novembre 2026',
+    size: '485 Ko',
     pages: [
       { n: 1, label: 'F3 · 1/4', title: 'AES est une permutation : de quoi parle-t-on ?', sections: '§ 1 à 4 : fonctions et permutations, (2¹²⁸)!, le catalogue des clés', thumb: 'f3-1.webp' },
       { n: 2, label: 'F3 · 2/4', title: 'Dans AES : quatre bijections, aucun marquage', sections: '§ 5 à 8 : anatomie d\'un tour, S-box, wide trail', thumb: 'f3-2.webp' },
