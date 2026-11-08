@@ -3,7 +3,7 @@ import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { ALGOS, FAMILIES } from '../data/algos';
 import { usePalette } from '../lib/prefs';
-import { resetState } from '../lib/persist';
+import { resetState, savedPages } from '../lib/persist';
 
 export function Layout() {
   const [theme, setTheme] = useState<string>(() => {
@@ -17,6 +17,20 @@ export function Layout() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const main = useRef<HTMLElement>(null);
   useEffect(() => { main.current?.scrollTo({ top: 0 }); }, [path]);
+  // nombre de pages ayant un état conservé : recalculé à chaque navigation, effacement ou retour sur l'onglet
+  const [saved, setSaved] = useState(0);
+  useEffect(() => {
+    const upd = () => setSaved(savedPages().length);
+    const t = setTimeout(upd, 300);
+    window.addEventListener('atelier-reset', upd);
+    window.addEventListener('focus', upd);
+    return () => { clearTimeout(t); window.removeEventListener('atelier-reset', upd); window.removeEventListener('focus', upd); };
+  }, [path]);
+  const clearAll = () => {
+    const n = savedPages().length;
+    if (n === 0) return;
+    if (window.confirm(`Effacer ce que ce navigateur a conservé pour ${n} page${n > 1 ? 's' : ''} (clés, textes, réglages) ?`)) resetState('*');
+  };
 
   return (
     <div className="app">
@@ -25,11 +39,12 @@ export function Layout() {
           <span className="logo"><Fad icon={IC.logo} /></span>
           <span><b>Atelier crypto</b><small>chiffrer · signer · voir les octets</small></span>
         </Link>
+        <div className="side-scroll">
         <nav className="nav">
           <Link to="/" activeOptions={{ exact: true }} activeProps={{ className: 'active' }}><span><Fad icon={IC.home} />Accueil</span></Link>
           <Link to="/planches" activeProps={{ className: 'active' }}><span><Fad icon={IC.books} />Planches du cours (PDF)</span></Link>
           <Link to="/histoire" activeProps={{ className: 'active' }}><span><Fad icon={IC.history} />Histoire en frise</span></Link>
-          <Link to="/notions" activeProps={{ className: 'active' }}><span><Fad icon={IC.notions} />Notions : MAC, anniversaires…</span></Link>
+          <Link to="/notions" activeProps={{ className: 'active' }}><span><Fad icon={IC.notions} />Notions et glossaire</span></Link>
           <Link to="/palette" activeProps={{ className: 'active' }}><span><Fad icon={IC.palette} />Palette des octets</span></Link>
         </nav>
         {FAMILIES.map((f) => (
@@ -48,14 +63,18 @@ export function Layout() {
         <div className="side-foot">
           Introduction à la cryptographie moderne
           <br />Benoit LEGER-DERVILLE · Stelau · iDAKTO
-          <button className="theme-btn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-            <Fad icon={theme === 'dark' ? IC.sun : IC.moon} />{theme === 'dark' ? 'Thème clair' : 'Thème sombre'}
+        </div>
+        </div>
+        <div className="side-bar" role="toolbar" aria-label="Réglages">
+          <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title={theme === 'dark' ? 'Passer au thème clair' : 'Passer au thème sombre'}>
+            <Fad icon={theme === 'dark' ? IC.sun : IC.moon} /><span>{theme === 'dark' ? 'Clair' : 'Sombre'}</span>
           </button>
-          <button className="theme-btn" onClick={() => setPalette(palette === 'atelier' ? 'planches' : 'atelier')}>
-            <Fad icon={IC.palette} />Palette : {palette === 'atelier' ? 'atelier' : 'planches PDF'}
+          <button onClick={() => setPalette(palette === 'atelier' ? 'planches' : 'atelier')} title={`Couleurs des octets : ${palette === 'atelier' ? 'atelier' : 'planches PDF'} (cliquer pour changer)`}>
+            <Fad icon={IC.palette} /><span>{palette === 'atelier' ? 'Atelier' : 'Planches'}</span>
           </button>
-          <button className="theme-btn" title="Efface les clés, textes et réglages conservés dans ce navigateur pour toutes les pages" onClick={() => { if (window.confirm('Effacer l\'état conservé de toutes les pages (clés, textes, réglages) ?')) resetState('*'); }}>
-            <Fad icon={IC.trash} />Effacer l'état de toutes les pages
+          <button onClick={clearAll} disabled={saved === 0} className="sb-clear"
+            title={saved ? `Oublier les clés, textes et réglages conservés dans ce navigateur (${saved} page${saved > 1 ? 's' : ''})` : 'Rien n\'est conservé dans ce navigateur'}>
+            <Fad icon={IC.broom} /><span>Oublier</span>{saved > 0 && <i className="sb-count">{saved}</i>}
           </button>
         </div>
       </aside>

@@ -1,5 +1,5 @@
 import { ALGO_ICON, Fad, IC } from '../lib/icons';
-const LANE_ICON = { sym: IC.sym, hash: IC.hash, rsa: ALGO_ICON['rsa-textbook'], ec: ALGO_ICON.ecies, sig: IC.sigFamily, pq: ALGO_ICON.mlkem } as const;
+const LANE_ICON = { sym: IC.sym, hash: IC.hash, rng: IC.rng, rsa: ALGO_ICON['rsa-textbook'], ec: ALGO_ICON.ecies, sig: IC.sigFamily, pq: ALGO_ICON.mlkem } as const;
 import { Link } from '@tanstack/react-router';
 import { useLayoutEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
@@ -27,7 +27,7 @@ export function HistoryPage() {
   const inEra = (y: number) => era === null || (y >= ERAS[era].from && y <= ERAS[era].to);
   return (
     <div className="page" ref={ref}>
-      <div className="head"><div><div className="fam">Histoire</div><h1><Fad icon={IC.history} className="h-ico" />Cinquante ans de chiffrement, de hachage et de signature</h1></div></div>
+      <div className="head"><div><div className="fam">Histoire</div><h1><Fad icon={IC.history} className="h-ico" />Soixante ans de chiffrement, de hachage, d'aléa et de signature</h1></div></div>
       <div className="filters">
         {LANES.map((l) => <button key={l.id} className={lanes.includes(l.id) ? 'on' : ''} onClick={() => toggle(l.id)}>{l.label}</button>)}
       </div>

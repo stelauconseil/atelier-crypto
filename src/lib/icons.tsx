@@ -16,6 +16,7 @@ import {
   faUserNinja, faBandage, faMicrochip, faIdCard, faMessages, faEquals, faArrowsRotate,
   faHashtag, faFaucetDrip, faBlender, faStamp, faSitemap, faDumbbell, faFilePdf, faBooks, faDownload,
   faRotateLeft, faTrashCan, faFloppyDisk, faPause, faPlay,
+  faSeedling, faDiceD20, faCrystalBall, faGears, faDoorOpen, faBug, faBroom, faChartColumn,
 } from '@awesome.me/kit-c549591fa3/icons/duotone/solid';
 
 config.autoAddCss = false;
@@ -35,6 +36,7 @@ export const IC = {
   equal: faEquals, again: faArrowsRotate, clone: faClone,
   hash: faFingerprint, pdf: faFilePdf, books: faBooks, download: faDownload, reset: faRotateLeft, trash: faTrashCan,
   saved: faFloppyDisk, pause: faPause, play: faPlay,
+  rng: faSeedling, broom: faBroom, chart: faChartColumn,
 } satisfies Record<string, IconDefinition>;
 
 /** Une icône par algorithme : clin d'œil à ce qui le caractérise. */
@@ -73,6 +75,11 @@ export const ALGO_ICON: Record<string, IconDefinition> = {
   hmac: faStamp, // le cachet
   hkdf: faSitemap, // une clé en donne plusieurs
   pwhash: faDumbbell, // l'effort imposé à l'attaquant
+  csprng: faDiceD20,
+  javarandom: faCrystalBall, // la boule de cristal
+  hmacdrbg: faGears,
+  dualec: faDoorOpen, // la porte dérobée
+  debian: faBug,
 };
 
 const NUMS = [faCircle1, faCircle2, faCircle3, faCircle4, faCircle5, faCircle6, faCircle7, faCircle8, faCircle9];

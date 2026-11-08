@@ -354,4 +354,59 @@ Le **sel**, unique par compte, empêche les tables précalculées (arc-en-ciel) 
 - **Argon2id** (Biryukov, Dinu, Khovratovich), lauréat de la Password Hashing Competition en 2015, normalisé en 2021 (RFC 9106) : paramètres séparés pour la mémoire, le temps et le parallélisme ; la variante « id » combine la résistance aux canaux auxiliaires et aux compromis temps-mémoire. Il utilise BLAKE2b en interne.` },
     { h: 'Choisir ses paramètres', t: `Partir du temps acceptable côté serveur (quelques centaines de millisecondes), puis monter la mémoire aussi haut que le serveur le permet. Point de départ OWASP pour Argon2id : 19 Mio, 2 passes, 1 fil. Les paramètres sont stockés avec le haché (format \`$argon2id$v=19$m=19456,t=2,p=1$sel$haché\`) : on peut les relever plus tard et re-hacher à la connexion suivante.` },
   ],
+  // ------------------------------------------------------------------ aléa
+  csprng: [
+    { h: 'Ce qu\'on attend d\'un générateur cryptographique', t: `Statistiquement uniforme ne suffit pas. Il faut l'**imprévisibilité** : sans l'état interne, aucune sortie ne doit se deviner à partir des précédentes (mieux qu'avec une chance sur 2ⁿ), et la compromission de l'état présent ne doit pas révéler les sorties passées (**résistance au retour en arrière**). Après un réensemencement avec assez d'entropie, l'attaquant qui connaissait l'ancien état doit aussi perdre la trace (**rétablissement**).
+
+Math.random (xorshift128+ dans V8), Mersenne Twister ou le LCG de Java satisfont les tests statistiques et échouent tous à la première exigence.` },
+    { h: 'D\'où vient l\'aléa du système', t: `Le noyau collecte des événements imprévisibles (horodatages d'interruptions, disque, réseau, instruction RDRAND/RDSEED du processeur), les **mélange** dans un pool par une fonction de hachage (BLAKE2s sous Linux depuis 2022), puis les **étire** avec un générateur déterministe (ChaCha20). Les applications le lisent par \`getrandom()\`, \`/dev/urandom\`, \`BCryptGenRandom\`, ou, dans un navigateur, \`crypto.getRandomValues\` (au plus 65 536 octets par appel), que l'atelier utilise partout.
+
+Le seul moment délicat est le **démarrage** : une machine virtuelle clonée ou un routeur sans disque peut générer ses clés avant d'avoir accumulé de l'entropie. C'est l'origine des facteurs RSA partagés trouvés par Heninger et al. (2012).` },
+    { h: 'Les tests statistiques', t: `- **Fréquence** : sur n bits, le nombre de 1 suit une loi binomiale ; z = (uns − n/2) / √(n/4) doit rester petit.
+- **Séries** : le nombre de changements 0 ↔ 1 doit être proche de n/2 ; un générateur qui alterne trop ou pas assez se trahit.
+- **χ²** des octets : chacune des 256 valeurs doit apparaître à peu près n/256 fois ; à 255 degrés de liberté, le χ² vaut environ 255, ni beaucoup plus (biais), ni beaucoup moins (trop régulier, comme le compteur).
+
+Les batteries complètes (NIST SP 800-22, Dieharder, TestU01) en alignent des dizaines. Elles écartent les mauvais générateurs ; elles ne certifient jamais les bons.` },
+    { h: 'À essayer', t: `Passez sur « compteur » : l'image montre des bandes régulières, la fréquence et les séries sont parfaites, mais le χ² est très en dessous de 255. Passez sur RANDU : seules 64 valeurs d'octet apparaissent (sans terme additif, les k bits de poids faible d'un LCG modulo une puissance de 2 ont une période d'au plus 2ᵏ⁻² : 64 pour un octet).` },
+  ],
+  javarandom: [
+    { h: 'Le générateur', t: `\`java.util.Random\` est un générateur congruentiel linéaire : état de **48 bits**, \`s ← (s × 0x5DEECE66D + 0xB) mod 2⁴⁸\`, et \`nextInt()\` renvoie les **32 bits de poids fort**. Le constructeur combine la graine par XOR avec la même constante 0x5DEECE66D ; sans graine, il prend un compteur et \`System.nanoTime()\`.
+
+Il ne cache que 16 bits : le premier entier observé donne les 32 bits hauts de l'état, il reste 2¹⁶ = 65 536 possibilités pour les bits bas, et le deuxième entier départage. Quelques millisecondes suffisent.` },
+    { h: 'Le même problème partout', t: `- **Mersenne Twister** (Python \`random\`, PHP \`mt_rand\`, Ruby) : 624 sorties de 32 bits donnent l'état complet par simple inversion du « tempering ».
+- **xorshift128+** (Math.random de V8, Firefox, Safari) : quelques sorties et un solveur SMT suffisent.
+- Codes de réinitialisation, jetons de session, identifiants de partie de poker en ligne : dès qu'ils proviennent d'un tel générateur, l'attaquant qui en voit quelques-uns prédit les autres.` },
+    { h: 'Ce qu\'il faut utiliser', t: `\`java.security.SecureRandom\`, \`secrets\` en Python, \`random_bytes\` en PHP, \`crypto.getRandomValues\` ou \`crypto.randomUUID\` en JavaScript. Ils s'appuient sur le générateur du système. Ils sont plus lents, ce qui ne compte que pour la simulation numérique : c'est là que Mersenne Twister reste pertinent.` },
+  ],
+  hmacdrbg: [
+    { h: 'Les trois opérations de SP 800-90A', t: `- **Instantiate** : K = 00…00, V = 01…01, puis \`Update(entropie ‖ nonce ‖ personnalisation)\`.
+- **Update(data)** : \`K = HMAC(K, V ‖ 00 ‖ data)\`, \`V = HMAC(K, V)\`, puis, si data n'est pas vide, une seconde fois avec \`01\`.
+- **Generate** : \`V = HMAC(K, V)\` autant de fois que nécessaire, on concatène les V, puis **Update** (avec l'entrée additionnelle). Ce dernier Update remplace K et V : c'est lui qui empêche de revenir en arrière.
+
+La norme borne une requête à 2¹⁹ bits et impose un **Reseed** au plus tard après 2⁴⁸ requêtes. Le compteur de l'atelier montre le nombre de requêtes depuis le dernier ensemencement.` },
+    { h: 'Entropie, nonce, personnalisation', t: `L'entropie est le seul ingrédient secret : sans elle, le générateur est entièrement déterminé. Le nonce et la chaîne de personnalisation ne sont pas secrets ; ils distinguent deux instances qui auraient reçu, par malchance ou par clonage de machine virtuelle, la même entropie (identifiant de l'appareil, numéro de série, horodatage). L'entrée additionnelle de Generate joue le même rôle à chaque requête.` },
+    { h: 'RFC 6979 : un DRBG détourné', t: `Une signature ECDSA exige un k secret, unique et uniforme : un k répété (Sony PS3, 2010) ou légèrement biaisé (attaques par réseau euclidien, quelques bits suffisent) livre la clé privée. RFC 6979 (Pornin, 2013) supprime le besoin d'aléa : on instancie un HMAC-DRBG avec \`x ‖ H(m) mod n\` comme entropie, et on tire k. Même clé et même message donnent le même k, donc la même signature ; un autre message donne un k sans rapport.
+
+Ed25519 fait la même chose plus simplement : \`r = H(préfixe secret ‖ m)\`. Les versions récentes mêlent un peu d'aléa à cette dérivation (signatures « hedged ») pour résister aux attaques par fautes.` },
+  ],
+  dualec: [
+    { h: 'Le générateur', t: `Deux points publics P et Q de la courbe P-256. À chaque étape : \`s ← x(s·P)\` puis la sortie est \`x(s·Q)\` privée de ses 16 premiers bits (30 octets sur 32). Il est **lent** (deux multiplications scalaires pour 30 octets, des centaines de fois plus lent que HMAC-DRBG) et légèrement **biaisé** (Gjøsteen 2006, Schoenmakers et Sidorenko 2006) : deux raisons de ne pas l'utiliser, avant même la porte dérobée.` },
+    { h: 'La porte dérobée', t: `Si quelqu'un connaît d tel que P = d·Q, alors pour une sortie r = x(s·Q) : il essaie les 2¹⁶ préfixes, relève chaque candidat en un point R de la courbe (environ la moitié des abscisses conviennent), et calcule x(d·R) = x(d·s·Q) = x(s·P) : c'est l'**état suivant**. La sortie d'après lui permet de choisir le bon candidat. Une trentaine d'octets observés suffit, par exemple le nonce aléatoire du ClientHello ou du ServerHello de TLS.
+
+Shumow et Ferguson l'ont montré en 2007. La norme ne disait pas d'où venaient P et Q ; elle permettait de choisir ses propres points, mais la validation FIPS exigeait les points officiels.` },
+    { h: 'Ce qui s\'est passé ensuite', t: `- **2013** : les documents Snowden (programme Bullrun) indiquent que la NSA a œuvré à l'adoption de Dual_EC ; RSA Security, qui l'avait mis par défaut dans BSAFE, recommande de cesser de l'utiliser. Reuters rapporte un contrat de 10 millions de dollars.
+- **2014** : Checkoway et al. exploitent concrètement Dual_EC dans plusieurs bibliothèques TLS, en quelques secondes à quelques heures selon les cas.
+- **2015** : SP 800-90A révision 1 le retire. Juniper découvre que le Q de ScreenOS a été remplacé à son insu ; un défaut faisait sortir Dual_EC sans post-traitement.
+
+La leçon dépasse le cas : une constante inexpliquée dans une norme est une dette de confiance. D'où les constantes « rien dans les manches » (chiffres de π, racines carrées des premiers nombres premiers dans SHA-2).` },
+  ],
+  debian: [
+    { h: 'Deux lignes en trop', t: `En septembre 2006, un mainteneur Debian commente deux appels \`MD_Update\` dans \`md_rand.c\` d'OpenSSL : Valgrind signalait la lecture de mémoire non initialisée, utilisée volontairement comme source d'entropie d'appoint. L'une des deux lignes était la seule qui ajoutait réellement l'entropie au pool. Restait le **numéro de processus**, au plus 32 768 sous Linux.
+
+Découvert par Luciano Bello en mai 2008 (DSA-1571, CVE-2008-0166) : toutes les clés SSH, SSL et OpenVPN générées en deux ans sur Debian et Ubuntu appartenaient à un ensemble de quelques dizaines de milliers par type et par taille. Les listes ont été publiées en quelques jours.` },
+    { h: 'Plus grave encore : DSA', t: `Une clé solide utilisée pour signer **DSA** sur une machine touchée était aussi compromise : le nonce k de chaque signature venait du même générateur appauvri. Une seule signature et 32 768 essais livraient la clé privée. C'est le même mécanisme que la PS3 et la raison d'être de RFC 6979.` },
+    { h: 'Ce qui l\'aurait évité', t: `- Ne pas modifier du code cryptographique sans relecture par ses auteurs (la question avait été posée sur une liste, mal comprise).
+- Des tests de bout en bout qui vérifient que deux générations successives diffèrent, même après redémarrage.
+- S'appuyer sur le générateur du système plutôt que sur un pool en espace utilisateur : c'est la recommandation actuelle d'OpenSSL et de la plupart des bibliothèques.` },
+  ],
 };

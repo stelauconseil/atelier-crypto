@@ -1,27 +1,38 @@
 import { ALGO_ICON, Fad, IC, Num } from '../lib/icons';
 import { Link } from '@tanstack/react-router';
 import { HomeCarousel } from '../components/HomeCarousel';
+import { HeroLogo } from '../components/HeroLogo';
 import { ALGOS, FAMILIES } from '../data/algos';
+
+const FAM_ICON = { sym: IC.sym, hash: IC.hash, kex: IC.kex, pke: IC.pke, sig: IC.sigFamily, rng: IC.rng } as const;
 
 export function HomePage() {
   return (
     <div className="page">
       <div className="hero">
-        <h1>Atelier crypto</h1>
-        <p>
-          Chiffrer, déchiffrer, signer, vérifier, avec du vrai code et de vrais octets. Chaque algorithme a sa fiche de rappel et son banc d'essai :
-          vous tapez, vous cliquez, et l'atelier montre le format exact des clés, des clairs, des chiffrés et des signatures, segment par segment.
-        </p>
-        <p style={{ fontSize: 13 }}>
-          WebCrypto du navigateur quand il sait faire (AES, RSA-OAEP/PSS, ECDSA, ECDH), bibliothèques @noble pour le reste (ChaCha20, GCM-SIV, ML-KEM, ML-DSA, SLH-DSA),
-          et du code écrit à la main pour ce qui doit se voir (PKCS#1 v1.5, OAEP, RSA-KEM, ECIES, HPKE, SHA-256).
-        </p>
+        <div className="hero-txt">
+          <div className="hero-kicker">Introduction à la cryptographie moderne</div>
+          <h1>Atelier crypto</h1>
+          <p>
+            Chiffrer, hacher, échanger une clé, signer, tirer de l'aléa : avec du vrai code et de vrais octets. Chacun des {ALGOS.length} ateliers a sa fiche
+            de rappel et son banc d'essai ; vous tapez, vous cliquez, et l'atelier montre le format exact des clés, des clairs, des chiffrés et des signatures,
+            segment par segment, puis ce qu'un attaquant en ferait.
+          </p>
+          <ul className="hero-fams">
+            {FAMILIES.map((f) => <li key={f.id}><Fad icon={FAM_ICON[f.id]} />{f.label} <b>{ALGOS.filter((x) => x.family === f.id).length}</b></li>)}
+          </ul>
+          <p className="hero-small">
+            WebCrypto du navigateur quand il sait faire, bibliothèques @noble pour le reste (ChaCha20, ML-KEM, ML-DSA, SLH-DSA, BLAKE3, Argon2…), et du code écrit
+            à la main pour ce qui doit se voir (OAEP, ECIES, HPKE, SHA-256 tour par tour, HMAC-DRBG, Dual_EC). Vos clés et réglages restent dans ce navigateur.
+          </p>
+        </div>
+        <HeroLogo />
       </div>
       <HomeCarousel />
       <div className="grid2" style={{ marginTop: 14 }}>
         {FAMILIES.map((f) => (
           <div className="card famcard" key={f.id}>
-            <h3><Fad icon={f.id === 'sym' ? IC.sym : f.id === 'hash' ? IC.hash : f.id === 'kex' ? IC.kex : f.id === 'pke' ? IC.pke : IC.sigFamily} className="ico-l" />{f.label}</h3>
+            <h3><Fad icon={FAM_ICON[f.id]} className="ico-l" />{f.label}</h3>
             <div className="meta" style={{ marginTop: 0 }}>{f.sub}</div>
             <div className="chips">
               {ALGOS.filter((a) => a.family === f.id).map((a) => (

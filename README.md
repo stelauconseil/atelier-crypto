@@ -17,7 +17,8 @@ Benoit LEGER-DERVILLE · Stelau · iDAKTO
 | Établissement de clé | Diffie-Hellman (corps fini, jouet et ffdhe2048), ECDH P-256, X25519, grille statique / éphémère avec le catalogue des protocoles qui utilisent DH, DH authentifié (SIGMA, homme du milieu), Chip Authentication des passeports (anti-clonage), Double Ratchet de Signal (vol d'état, auto-guérison) |
 | Chiffrement asymétrique | RSA brut, RSAES-PKCS1-v1_5, RSAES-OAEP, RSA-KEM, ECIES (P-256, variante Apple), HPKE (RFC 9180), ML-KEM-768, X25519MLKEM768 |
 | Signatures | RSASSA-PKCS1-v1_5, RSASSA-PSS, ECDSA P-256 (+ attaque « PS3 » du nonce réutilisé), Ed25519, ML-DSA-65, SLH-DSA (128f / 128s) |
-| Pages transverses | Carrousel d'exemples par famille sur l'accueil, planches du cours en PDF (page dédiée et renvois depuis « Pour aller plus loin »), frise historique filtrable, Notions (extension de longueur SHA-256(K ‖ M) contre HMAC, paradoxe des anniversaires), glossaire |
+| Aléa et générateurs | Générateur du système face à Math.random, RANDU et un compteur (image des bits, tests de fréquence, de séries et du χ²), java.util.Random prédit à partir de deux sorties, HMAC-DRBG (SP 800-90A) et le nonce déterministe de RFC 6979, Dual_EC_DRBG et sa porte dérobée, Debian OpenSSL 2008 (32 768 clés possibles) |
+| Pages transverses | Carrousel d'exemples par famille sur l'accueil, planches du cours en PDF (page dédiée et renvois depuis « Pour aller plus loin »), frise historique filtrable, Notions (six objectifs de sécurité, extension de longueur SHA-256(K ‖ M) contre HMAC, paradoxe des anniversaires, niveaux de sécurité équivalents, glossaire par famille) |
 
 Pour chaque algorithme : une fiche de rappel (issue des planches), de vrais champs et boutons
 (générer, chiffrer, altérer un bit, déchiffrer, signer, vérifier), la chaîne d'opérations animée
@@ -48,7 +49,7 @@ ou remplacer `src/lib/icons.tsx` par des icônes libres (`@fortawesome/free-soli
 ```bash
 vp install          # dépendances
 vp dev              # serveur de développement
-vp test             # 80 tests : allers-retours, altérations, interopérabilité, attaques
+vp test             # 87 tests : allers-retours, altérations, interopérabilité, attaques
 vp build            # build statique dans dist/
 SINGLE=1 vp build   # un seul fichier HTML autonome dans dist-single/
 vp run test:e2e     # tests Playwright (script du package.json ; aussi : npm run test:e2e)
@@ -65,7 +66,7 @@ chaque atelier affiche le bon verdict (⊥ après altération, JWS vérifié, or
 
 ```bash
 npx playwright install chromium   # une fois
-npm run test:e2e                  # build + vp preview, puis les 66 tests
+npm run test:e2e                  # build + vp preview, puis les 70 tests
 ATELIER_URL=file://$PWD/dist-single/index.html npm run test:e2e   # sur un build en fichier unique
 ```
 
@@ -111,8 +112,8 @@ dans le dépôt (seulement dans le site construit).
 Chaque page garde ses réglages, ses textes et ses biclés dans le `localStorage` (`atelier/v1/<page>`),
 validés par zod à la relecture (`src/lib/persist.ts`). Les octets, les entiers longs et les clés WebCrypto
 (exportées en JWK) sont codés en JSON ; une valeur illisible est ignorée et la page repart de ses valeurs
-par défaut. « Réinitialiser la page » efface l'état d'une page, « Effacer l'état de toutes les pages »
-(menu) efface tout. Ce sont des clés de démonstration : elles sont stockées en clair.
+par défaut. « Réinitialiser la page » efface l'état d'une page, le bouton « Oublier »,
+en bas du menu (avec le nombre de pages concernées), efface tout. Ce sont des clés de démonstration : elles sont stockées en clair.
 
 ## Planches PDF
 

@@ -1,3 +1,4 @@
+import { JavaRandom } from '../crypto/rng';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import gsap from 'gsap';
@@ -220,6 +221,47 @@ function SigSlide() {
   );
 }
 
+
+// ---------------------------------------------------------------- 6. aléa : un générateur non cryptographique se prédit
+const JAVA = (() => { const r = new JavaRandom(20261108n); return Array.from({ length: 5 }, () => (r.nextInt() >>> 0).toString().padStart(10, '0')); })();
+function RngSlide() {
+  const ref = useLoop((tl) => {
+    tl.set(['.c-obs', '.c-pred', '.c-real', '.atk', '.ok', '.brace'], { opacity: 0 })
+      .set('.c-real', { y: -8 })
+      .to('.c-obs', { opacity: 1, duration: 0.4, stagger: 0.5 }, '+=0.3')
+      .to('.brace', { opacity: 1, duration: 0.4 })
+      .to('.atk', { opacity: 1, duration: 0.5 })
+      .to('.c-pred', { opacity: 1, duration: 0.35, stagger: 0.35 }, '+=0.4')
+      .to('.c-real', { opacity: 1, y: 0, duration: 0.4, stagger: 0.35 }, '+=0.5')
+      .to('.ok', { opacity: 1, duration: 0.4 })
+      .to({}, { duration: 2 });
+  });
+  const X = (i: number) => 22 + i * 122;
+  return (
+    <svg ref={ref} viewBox="0 0 640 214" width="100%" className="svgdiag" role="img" aria-label="Prédire java.util.Random à partir de deux sorties">
+      <text x="320" y="20" textAnchor="middle" fontSize="12" fill="var(--mute)">Le serveur envoie des codes de réinitialisation tirés de <tspan fontFamily="var(--mono)">java.util.Random</tspan></text>
+      {JAVA.map((v, i) => (
+        <g key={i}>
+          <text x={X(i) + 52} y="44" textAnchor="middle" fontSize="11" fill="var(--mute)">code n° {i + 1}</text>
+          {i < 2 ? (
+            <g className="c-obs"><rect x={X(i)} y="52" width="104" height="28" rx="6" fill="var(--panel)" stroke="var(--orange)" strokeWidth="1.6" /><text x={X(i) + 52} y="71" textAnchor="middle" fontSize="13" fontFamily="var(--mono)" fill="var(--ink)">{v}</text></g>
+          ) : (
+            <>
+              <g className="c-pred"><rect x={X(i)} y="52" width="104" height="28" rx="6" fill="var(--panel)" stroke="var(--red)" strokeWidth="1.6" strokeDasharray="4 3" /><text x={X(i) + 52} y="71" textAnchor="middle" fontSize="13" fontFamily="var(--mono)" fill="var(--red)">{v}</text></g>
+              <g className="c-real"><rect x={X(i)} y="122" width="104" height="28" rx="6" fill="var(--panel2)" stroke="var(--line)" /><text x={X(i) + 52} y="141" textAnchor="middle" fontSize="13" fontFamily="var(--mono)" fill="var(--ink)">{v}</text><text x={X(i) + 52} y="166" textAnchor="middle" fontSize="12" fontWeight="800" fill="var(--green)" className="ok">identique</text></g>
+            </>
+          )}
+        </g>
+      ))}
+      <path className="brace" d={`M${X(0)} 88 Q${X(0)} 96 ${X(0) + 12} 96 L${X(1) + 92} 96 Q${X(1) + 104} 96 ${X(1) + 104} 88`} fill="none" stroke="var(--orange)" strokeWidth="1.4" />
+      <g className="atk"><text x={X(0) + 113} y="114" textAnchor="middle" fontSize="12" fontWeight="700" fill="var(--orange)">l'attaquant en observe deux</text><text x={X(0) + 113} y="130" textAnchor="middle" fontSize="11" fill="var(--mute)">→ état de 48 bits en ≤ 2¹⁶ essais</text></g>
+      <text x={X(3) + 52} y="104" textAnchor="middle" fontSize="11" fill="var(--red)" className="c-pred">prédits</text>
+      <text x={X(3) + 52} y="116" textAnchor="middle" fontSize="11" fill="var(--mute)" className="c-real">… puis envoyés aux autres comptes</text>
+      <text x="320" y="200" textAnchor="middle" fontSize="12" fill="var(--mute)">passer les tests statistiques ne suffit pas : une clé exige un générateur imprévisible (SecureRandom, getrandom)</text>
+    </svg>
+  );
+}
+
 interface Slide { fam: string; title: string; to: string; cta: string; node: () => ReactNode }
 
 const SLIDES: Slide[] = [
@@ -228,6 +270,7 @@ const SLIDES: Slide[] = [
   { fam: 'Hachage, MAC et dérivation', title: 'L\'effet avalanche : un caractère change, la moitié de l\'empreinte suit', to: 'sha256', cta: 'Ouvrir SHA-256', node: () => <HashSlide /> },
   { fam: 'Établissement de clé', title: 'Diffie-Hellman : un secret commun sans jamais l\'échanger', to: 'dh', cta: 'Ouvrir Diffie-Hellman', node: () => <KexSlide /> },
   { fam: 'Signatures', title: 'Signer avec la clé privée, vérifier avec la publique', to: 'ecdsa', cta: 'Ouvrir ECDSA', node: () => <SigSlide /> },
+  { fam: 'Aléa et générateurs', title: 'Un générateur « statistiquement aléatoire » se prédit en deux sorties', to: 'javarandom', cta: 'Ouvrir java.util.Random', node: () => <RngSlide /> },
 ];
 
 /** Carrousel de l'accueil : un exemple animé par famille. */

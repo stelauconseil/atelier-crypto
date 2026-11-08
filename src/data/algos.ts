@@ -1,4 +1,4 @@
-export type Family = 'sym' | 'hash' | 'kex' | 'pke' | 'sig';
+export type Family = 'sym' | 'hash' | 'kex' | 'pke' | 'sig' | 'rng';
 export type PillTone = 'ok' | 'mid' | 'ko' | 'pq' | 'nt';
 
 export interface AlgoInfo {
@@ -23,6 +23,7 @@ export const FAMILIES: { id: Family; label: string; sub: string }[] = [
   { id: 'kex', label: 'Établissement de clé', sub: 'Diffie-Hellman, statique ou éphémère' },
   { id: 'pke', label: 'Chiffrement asymétrique', sub: 'Du transport de clé au KEM' },
   { id: 'sig', label: 'Signatures', sub: 'De PKCS#1 v1.5 à SLH-DSA' },
+  { id: 'rng', label: 'Aléa et générateurs', sub: 'D\'où viennent les clés : PRNG, DRBG, entropie' },
 ];
 
 export const ALGOS: AlgoInfo[] = [
@@ -285,6 +286,47 @@ export const ALGOS: AlgoInfo[] = [
     points: ['Clé publique de 32 octets seulement, mais signatures de 8 à 17 Ko (et jusqu\'à 50 Ko).', 'Le choix conservateur : aucune hypothèse algébrique, seulement la sécurité de SHA-256 ou SHAKE.', 'Comparez les variantes 128f (rapide, grande) et 128s (compacte, lente).'],
     formula: 'σ = R ‖ SIG_FORS ‖ SIG_HT',
     where: 'Racines de confiance, archivage long terme, firmware.', refs: 'FIPS 205',
+  },
+  // ------------------------------------------------------------------ aléa et générateurs
+  {
+    id: 'csprng', family: 'rng', name: 'Le générateur du système', short: 'getRandomValues', year: '1994 · 2014', status: [['à utiliser', 'ok']],
+    lead: 'Toute la cryptographie repose sur des secrets imprévisibles. Le système d\'exploitation collecte de l\'entropie (interruptions, horloges, matériel) et en tire un flux pseudo-aléatoire cryptographique : c\'est lui qu\'il faut appeler, jamais un générateur « maison ».',
+    points: ['Navigateur : crypto.getRandomValues (65 536 octets par appel au plus) ; Linux : getrandom() (2014) ; Windows : BCryptGenRandom ; Java : SecureRandom.', 'Réussir des tests statistiques ne prouve rien : un compteur est parfaitement équilibré. Ce qui compte est l\'imprévisibilité, même pour qui connaît les sorties passées.', 'Math.random (xorshift128+ dans V8) passe les tests mais se prédit à partir de quelques sorties.'],
+    formula: 'entropie (bruit) → pool → DRBG (ChaCha20, AES-CTR, HMAC) → octets imprévisibles',
+    pitfalls: ['Comparez les quatre sources : RANDU et le compteur se voient sur l\'image ou ratent le χ² ; Math.random passe tout, et pourtant on ne doit jamais l\'utiliser pour une clé.'],
+    where: 'Toutes les clés, nonces, IV, sels et défis de l\'atelier viennent de getRandomValues.', refs: 'SP 800-90A/B/C · SP 800-22 · RFC 4086',
+  },
+  {
+    id: 'javarandom', family: 'rng', name: 'Prédire un générateur non cryptographique', short: 'java.util.Random', year: '1996', status: [['jamais pour la sécurité', 'ko']],
+    lead: 'java.util.Random est un générateur congruentiel linéaire de 48 bits : chaque sortie de 32 bits montre presque tout son état. Deux sorties consécutives suffisent pour prédire toutes les suivantes.',
+    points: ['État : sₙ₊₁ = (0x5DEECE66D · sₙ + 11) mod 2⁴⁸ ; nextInt() rend les 32 bits de poids fort.', 'Il reste 16 bits inconnus : 65 536 essais, une fraction de seconde. La deuxième sortie désigne le bon.', 'Même famille de défaut : rand() de la libc, Mersenne Twister (624 sorties suffisent), Math.random.'],
+    formula: 'sₙ₊₁ = (25 214 903 917 · sₙ + 11) mod 2⁴⁸ ;  sortie = ⌊sₙ₊₁ / 2¹⁶⌋',
+    pitfalls: ['Le serveur émet des codes de réinitialisation de mot de passe : observez-en deux, puis prédisez les suivants.'],
+    where: 'Jetons de session, codes de réinitialisation, identifiants « aléatoires » mal générés ; loteries et casinos en ligne compromis.', refs: 'Javadoc java.util.Random · Knuth TAOCP vol. 2',
+  },
+  {
+    id: 'hmacdrbg', family: 'rng', name: 'HMAC-DRBG et RFC 6979', short: 'HMAC-DRBG', year: '2006 · 2013', status: [['OK', 'ok']],
+    lead: 'Un DRBG (Deterministic Random Bit Generator) étire une graine d\'entropie en un long flux imprévisible. HMAC-DRBG le fait avec deux valeurs secrètes, K et V, mises à jour par HMAC à chaque appel.',
+    points: ['Instancier : graine = entropie ‖ nonce ‖ personnalisation ; Generate : V = HMAC(K, V) répété, puis mise à jour de K et V (retour en arrière impossible).', 'Reseed : on réinjecte de l\'entropie ; SP 800-90A borne le nombre d\'appels entre deux reseeds.', 'RFC 6979 utilise HMAC-DRBG pour tirer le nonce k d\'ECDSA de la clé privée et du message : plus de PS3 possible.'],
+    formula: 'K = HMAC(K, V ‖ 00 ‖ graine) ; V = HMAC(K, V) ; K = HMAC(K, V ‖ 01 ‖ graine) ; V = HMAC(K, V) ;  sortie = V = HMAC(K, V), …',
+    pitfalls: ['Instanciez deux fois avec la même graine : même flux. Puis rejouez le vecteur de l\'annexe A.2.5 de RFC 6979.'],
+    where: 'ECDSA déterministe (RFC 6979, BoringSSL, @noble), générateurs certifiés FIPS, HSM.', refs: 'SP 800-90A Rev. 1 · RFC 6979',
+  },
+  {
+    id: 'dualec', family: 'rng', name: 'Dual_EC_DRBG : la porte dérobée', short: 'Dual_EC', year: '2006 · 2013', status: [['retiré', 'ko']],
+    lead: 'Un générateur normalisé par le NIST en 2006, fondé sur deux points P et Q d\'une courbe elliptique. Celui qui connaît d tel que P = d·Q retrouve l\'état interne à partir d\'une seule sortie, et prédit tout le reste.',
+    points: ['État : s ← x(s·P) ; sortie : x(s·Q) privée de ses 2 premiers octets (30 octets restent).', 'Shumow et Ferguson montrent la possibilité d\'une porte dérobée dès 2007 ; les documents Snowden (2013) la rendent crédible. Le NIST retire l\'algorithme (SP 800-90A Rev. 1, 2015).', 'Juniper ScreenOS (2015) : quelqu\'un avait remplacé Q dans le code, et récupérait les clés VPN.'],
+    formula: 'R = s·Q ⇒ d·R = s·(d·Q) = s·P ⇒ x(d·R) = état suivant',
+    pitfalls: ['Jouez le rôle de celui qui connaît d : deux sorties observées suffisent pour prédire la troisième, la quatrième…'],
+    where: 'RSA BSAFE (par défaut jusqu\'en 2013), Juniper ScreenOS ; aujourd\'hui nulle part.', refs: 'SP 800-90 (2006) · Shumow-Ferguson 2007 · Checkoway et al. 2014',
+  },
+  {
+    id: 'debian', family: 'rng', name: 'Debian 2008 : l\'entropie manquante', short: 'Debian 2008', year: '2006 · 2008', status: [['incident', 'ko']],
+    lead: 'De 2006 à 2008, l\'OpenSSL de Debian et Ubuntu n\'a été alimenté que par le numéro de processus (PID, au plus 32 768). Toutes les clés SSH et TLS générées sur ces systèmes appartenaient à un ensemble de quelques dizaines de milliers, énumérable en quelques heures.',
+    points: ['Un correctif destiné à faire taire Valgrind avait supprimé l\'ajout d\'entropie dans le générateur (septembre 2006).', 'Découvert par Luciano Bello en mai 2008 (DSA-1571) : listes noires de clés, régénération massive.', 'Même cause, autres effets : nonces ECDSA biaisés, clés RSA partageant un facteur premier (Heninger et al., 2012).'],
+    formula: 'clé = f(PID),  PID ∈ [1, 32 768] ⇒ 15 bits d\'entropie au lieu de 128',
+    pitfalls: ['Le serveur génère sa clé avec un PID inconnu ; retrouvez-la à partir de sa seule clé publique.'],
+    where: 'Clés SSH, certificats TLS, clés OpenVPN générés sur Debian, Ubuntu et dérivés entre 2006 et 2008.', refs: 'Debian DSA-1571 · Yilek et al. 2009',
   },
 ];
 

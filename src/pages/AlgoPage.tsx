@@ -10,6 +10,7 @@ import { PkeLab } from '../labs/PkeLab';
 import { SigLab } from '../labs/SigLab';
 import { KexLab } from '../labs/KexLab';
 import { HashLab } from '../labs/HashLab';
+import { RngLab } from '../labs/RngLab';
 import { hasSaved, resetState, useResetNonce } from '../lib/persist';
 
 export function AlgoPage() {
@@ -52,6 +53,7 @@ function AlgoView({ id }: { id: string }) {
         <div style={{ height: 14 }} />
         {a.family === 'sym' && <SymLab id={id} defaultText={a.defaultText} />}
         {a.family === 'hash' && <HashLab id={id} />}
+        {a.family === 'rng' && <RngLab id={id} />}
         {a.family === 'kex' && <KexLab id={id} />}
         {a.family === 'pke' && <PkeLab id={id} />}
         {a.family === 'sig' && <SigLab id={id} />}

@@ -7,6 +7,7 @@ import kexSrc from '../crypto/kex.ts?raw';
 import kdfSrc from '../crypto/kdf.ts?raw';
 import hashSrc from '../crypto/hash.ts?raw';
 import macSrc from '../crypto/mac.ts?raw';
+import rngSrc from '../crypto/rng.ts?raw';
 import bytesSrc from '../lib/bytes.ts?raw';
 
 export const SOURCES: Record<string, string> = {
@@ -17,6 +18,7 @@ export const SOURCES: Record<string, string> = {
   'src/crypto/kdf.ts': kdfSrc,
   'src/crypto/hash.ts': hashSrc,
   'src/crypto/mac.ts': macSrc,
+  'src/crypto/rng.ts': rngSrc,
   'src/lib/bytes.ts': bytesSrc,
 };
 
@@ -53,6 +55,7 @@ const B = 'src/lib/bytes.ts';
 const X = 'src/crypto/kex.ts';
 const HS = 'src/crypto/hash.ts';
 const MC = 'src/crypto/mac.ts';
+const R = 'src/crypto/rng.ts';
 
 /** Pour chaque algorithme : les déclarations à montrer, dans l'ordre de lecture. */
 export const CODE: Record<string, [string, string][]> = {
@@ -83,6 +86,11 @@ export const CODE: Record<string, [string, string][]> = {
   hmac: [[HS, 'hmacParts'], [MC, 'naiveMac'], [MC, 'lengthExtend']],
   hkdf: [[HS, 'hkdfSteps']],
   pwhash: [[HS, 'pwMemory'], [HS, 'pwHash'], [HS, 'PW_DEFAULTS']],
+  csprng: [[R, 'sourceBytes'], [R, 'stats'], [R, 'verdict']],
+  javarandom: [[R, 'JavaRandom'], [R, 'crackJavaRandom']],
+  hmacdrbg: [[R, 'drbgUpdate'], [R, 'drbgInstantiate'], [R, 'drbgGenerate'], [R, 'drbgReseed'], [R, 'rfc6979']],
+  dualec: [[R, 'dualEcSetup'], [R, 'dualEcStep'], [R, 'dualEcAttack']],
+  debian: [[R, 'weakKey'], [R, 'crackWeakKey']],
   dh: [[X, 'DH_GROUPS'], [X, 'dhSecret'], [X, 'dhPublic'], [X, 'dhCheck'], [X, 'dhShared'], [B, 'modPow']],
   ecdh: [[X, 'p256Pair'], [X, 'ecdhP256'], [X, 'compressP256']],
   x25519: [[X, 'clamp'], [X, 'xPair'], [X, 'xdh'], [X, 'LOW_ORDER']],

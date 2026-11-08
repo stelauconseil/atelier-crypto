@@ -258,6 +258,55 @@ test.describe('robustesse des ateliers', () => {
     await noOverflow(page);
   });
 
+  test('Aléa : sources, Java prédit, DRBG, Dual_EC et Debian cassés', async ({ page }) => {
+    await go(page, '/algo/csprng');
+    for (const v of ['compteur', 'RANDU', 'Math.random', 'crypto']) {
+      await page.locator('.segctl button', { hasText: v }).first().click();
+      await expect(page.locator('.kx-table tbody tr')).toHaveCount(3);
+    }
+    await expect(page.locator('.rg-bitmap')).toBeVisible();
+    await noOverflow(page);
+    await go(page, '/algo/javarandom');
+    await page.click("button:has-text('Demander un code')");
+    await page.click("button:has-text('Demander un code')");
+    await page.click("button:has-text('Retrouver l\\'état interne')");
+    await page.click("button:has-text('Voir les codes')");
+    await expect(page.locator('.status').last()).toContainText(/Tous prédits/);
+    await go(page, '/algo/hmacdrbg');
+    await page.click("button:has-text('Instancier')");
+    await page.click("button:has-text('Generate')");
+    await page.click("button:has-text('Reseed')");
+    await page.click("button:has-text('Generate')");
+    await expect(page.locator('.bv').filter({ hasText: 'Sortie n° 2 · requête 1' })).toBeVisible();
+    await page.click("button:has-text('Vecteur RFC 6979')");
+    await expect(page.getByText(/exactement la valeur de l'annexe A\.2\.5/)).toBeVisible();
+    await noOverflow(page);
+    await go(page, '/algo/dualec');
+    for (let i = 0; i < 3; i++) await page.click("button:has-text('Produire 31 octets')");
+    await page.click("button:has-text('Retrouver l\\'état')");
+    await expect(page.getByText('Sortie n° 3, prédite : identique à la vraie')).toBeVisible({ timeout: 20000 });
+    await go(page, '/algo/debian');
+    await page.click("button:has-text('Lancer la recherche exhaustive')");
+    await expect(page.getByText(/Clé privée retrouvée : PID/)).toBeVisible({ timeout: 90000 });
+    await noOverflow(page);
+  });
+
+  test('Menu : réglages toujours visibles, « Oublier » efface l\'état conservé', async ({ page }) => {
+    await expect(page.locator('.side-bar button')).toHaveCount(3);
+    await go(page, '/algo/sha256');
+    await page.locator('textarea').first().fill('à oublier');
+    await page.locator('.side-scroll').evaluate((e) => e.scrollTo(0, e.scrollHeight));
+    await expect(page.locator('.side-bar')).toBeInViewport();
+    await page.waitForTimeout(500);
+    await go(page, '/notions');
+    await expect(page.locator('.sb-count')).toBeVisible();
+    page.once('dialog', (d) => d.accept());
+    await page.click('.sb-clear');
+    await expect(page.locator('.sb-clear')).toBeDisabled();
+    await go(page, '/algo/sha256');
+    await expect(page.locator('textarea').first()).toHaveValue('abc');
+  });
+
   test('Planches : page dédiée, vignettes et liens PDF, rappel dans « Pour aller plus loin »', async ({ page }) => {
     await go(page, '/planches');
     await expect(page.locator('.planche')).toHaveCount(2);
@@ -297,8 +346,8 @@ test.describe('robustesse des ateliers', () => {
   test('Accueil : carrousel, un exemple par famille', async ({ page }) => {
     await go(page, '/');
     const dots = page.locator('.car-dots button');
-    await expect(dots).toHaveCount(5);
-    for (let i = 0; i < 5; i++) {
+    await expect(dots).toHaveCount(6);
+    for (let i = 0; i < 6; i++) {
       await dots.nth(i).click();
       await page.waitForTimeout(300);
       await expect(page.locator('.car-stage svg')).toBeVisible();

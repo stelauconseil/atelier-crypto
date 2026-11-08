@@ -1,8 +1,9 @@
-export type Lane = 'sym' | 'hash' | 'rsa' | 'ec' | 'sig' | 'pq';
+export type Lane = 'sym' | 'hash' | 'rng' | 'rsa' | 'ec' | 'sig' | 'pq';
 
 export const LANES: { id: Lane; label: string; color: string }[] = [
   { id: 'sym', label: 'Symétrique', color: 'var(--teal)' },
   { id: 'hash', label: 'Hachage et MAC', color: 'var(--green)' },
+  { id: 'rng', label: 'Aléa', color: 'var(--gold)' },
   { id: 'rsa', label: 'RSA', color: 'var(--navy)' },
   { id: 'ec', label: 'DH / courbes', color: 'var(--orange)' },
   { id: 'sig', label: 'Signatures', color: 'var(--plum)' },
@@ -19,6 +20,18 @@ export interface Ev {
 }
 
 export const EVENTS: Ev[] = [
+  { year: 1968, lane: 'rng', title: 'RANDU', detail: 'Marsaglia : les triplets du générateur d\'IBM tombent sur 15 plans.', algo: 'csprng', bad: true },
+  { year: 1995, lane: 'rng', title: 'Netscape', detail: 'Goldberg et Wagner : la graine SSL (heure, PID) se devine en quelques secondes.', bad: true },
+  { year: 1997, lane: 'rng', title: 'Mersenne Twister', detail: 'Matsumoto, Nishimura : excellent statistiquement, prévisible après 624 sorties.', algo: 'javarandom' },
+  { year: 2006, lane: 'rng', title: 'SP 800-90', detail: 'NIST normalise quatre DRBG, dont HMAC-DRBG… et Dual_EC_DRBG.', algo: 'hmacdrbg' },
+  { year: 2007, lane: 'rng', title: 'Shumow et Ferguson', detail: 'Qui connaît d tel que P = d·Q prédit Dual_EC (CRYPTO 2007, session courte).', algo: 'dualec' },
+  { year: 2008, lane: 'rng', title: 'Debian OpenSSL', detail: 'CVE-2008-0166 : seul le PID alimente le générateur, 32 768 clés possibles.', algo: 'debian', bad: true },
+  { year: 2010, lane: 'rng', title: 'PS3 : nonce fixe', detail: 'fail0verflow : Sony signe avec le même k ; clé privée retrouvée.', algo: 'hmacdrbg', bad: true },
+  { year: 2012, lane: 'rng', title: 'Mining your Ps and Qs', detail: 'Heninger et al. : facteurs RSA partagés, clés de 0,5 % des serveurs TLS retrouvées par PGCD.', bad: true },
+  { year: 2013, lane: 'rng', title: 'Snowden et Dual_EC ; RFC 6979', detail: 'Dual_EC présenté comme une porte dérobée de la NSA ; le nonce ECDSA déterministe est publié.', algo: 'dualec', bad: true },
+  { year: 2014, lane: 'rng', title: 'getrandom()', detail: 'Linux 3.17 : un appel système qui bloque seulement tant que le pool n\'est pas initialisé.', algo: 'csprng' },
+  { year: 2015, lane: 'rng', title: 'Retrait de Dual_EC ; Juniper', detail: 'SP 800-90A rév. 1 ; ScreenOS révèle un Q remplacé par un tiers.', algo: 'dualec', bad: true },
+  { year: 2022, lane: 'rng', title: 'Linux : BLAKE2s', detail: 'Donenfeld remplace SHA-1 par BLAKE2s dans le pool d\'entropie du noyau.', algo: 'csprng' },
   { year: 1989, lane: 'hash', title: 'Merkle-Damgård', detail: 'Merkle et Damgård, séparément : une compression résistante aux collisions donne un hachage qui l\'est aussi.', algo: 'sha256' },
   { year: 1992, lane: 'hash', title: 'MD5', detail: 'RFC 1321 (Rivest).' },
   { year: 1995, lane: 'hash', title: 'SHA-1', detail: 'FIPS 180-1 : corrige SHA-0 (1993).' },
