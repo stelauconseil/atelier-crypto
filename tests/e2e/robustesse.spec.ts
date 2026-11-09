@@ -137,6 +137,7 @@ test.describe('robustesse des ateliers', () => {
 
   test('DH : petit sous-groupe, avec et sans validation', async ({ page }) => {
     await go(page, '/algo/dh');
+    await expect(page.locator('.card select.t').first()).toHaveValue('ffdhe2048');
     await page.locator('label.f', { hasText: 'à la place de B' }).locator('select').selectOption('pm1');
     await page.click("button:has-text('Calculer Z')");
     await expect(lastStatus(page)).toContainText(/Valeur refusée/);

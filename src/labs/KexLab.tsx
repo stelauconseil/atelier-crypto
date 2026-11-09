@@ -57,7 +57,7 @@ function genNote(G: DhGroup): string {
 function DhLab() {
   // Groupe et secrets dans un même état : un changement de groupe ne peut pas laisser des secrets de l'ancien.
   const fresh = (gid: Gid) => { const G = DH_GROUPS[gid]; return { gid, a: dhSecret(G), b: dhSecret(G) }; };
-  const [k, setK] = usePersisted('dh', 'secrets', () => fresh('toy'), z.object({ gid: z.string().refine((g) => g in DH_GROUPS), a: z.bigint(), b: z.bigint() }));
+  const [k, setK] = usePersisted('dh', 'secrets-v2', () => fresh('ffdhe2048'), z.object({ gid: z.string().refine((g) => g in DH_GROUPS), a: z.bigint(), b: z.bigint() }));
   const gid = k.gid;
   const G = DH_GROUPS[gid];
   const small = G.bytes === 1;
